@@ -35,7 +35,12 @@ channel `plow`, accountId `chat`, target the printed `chatUid`. Write in
       that closes the commitment or only asks the owner in the digest.
    5. Run `scan-<source>.ts commit`. Only after every candidate and pair is
       recorded: commit moves past them for good.
-4. End silently. The poll never tells the owner what it recorded; the digest
+4. Run `digest.ts alerts`. For each alert (only critical ones: due today to
+   an investor or customer, or blocking something else), send its `text` to
+   the owner's DM as printed, then run `digest.ts alerts --sent <ids>` with
+   the ids you sent (also when delivery is unknown). Outside those, never
+   message the owner in real time.
+5. End silently. The poll never tells the owner what it recorded; the digest
    does.
 
 ## Extract
