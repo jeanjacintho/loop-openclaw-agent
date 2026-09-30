@@ -12,6 +12,10 @@ goes through these scripts.
 
 | Script | Arguments | Prints |
 |---|---|---|
+| `setup-status.ts` | | `{status:"READY", config, now, weekday}` or `{status:"SETUP_NEEDED", next, question, draft}` |
+| `record-setup.ts` | `--field F --value V` \| `--done` \| `--pause` \| `--resume` | before setup `{saved, next, question}`; after `{saved, config}`; `--done` → `{done, config}`; pause/resume → `{paused, config}` |
+| `owner-chat.ts` | | `{chatUid}`: the owner's DM |
+| `mac-timezone.ts` | | `{timezone}` from the Mac, or `null` |
 | `ledger.ts` | `add --json '<commitment>'` \| `--json-file F` | `{commitment, created}`; `created:false` when the same (source, item, what) is already there |
 | | `event --id X --kind K [--json '<payload>'] [--actor owner\|loop\|auto]` | `{commitment}` after the event |
 | | `evidence --id X --json '<evidence>'` | `{commitment, added}` |

@@ -46,8 +46,15 @@ export function renderConfig(identity: Identity, apiBase: string, threadTrust = 
     mcp: { sessionIdleTtlMs: 300_000, ...(identity.mcp_url ? { servers: { plow: {
       url: "http://127.0.0.1:18790/mcp", transport: "streamable-http",
       headers: { Authorization: "Bearer ${PLOW_MCP_BRIDGE_TOKEN}" },
+      // Without it OpenClaw caps the relay's tool listing at 1500 ms, and a Mac
+      // round trip takes 0.9-1.8 s: a turn could get no Mac tools at all.
+      requestTimeoutMs: 60_000,
     } } } : {}) },
-    plugins: { load: { paths: ["/opt/plow/plugin"] }, entries: { plow: { enabled: true } } },
+    // Loop's setup gate (gate/) runs a conversation hook, which OpenClaw allows
+    // a non-bundled plugin only with allowConversationAccess.
+    plugins: { load: { paths: ["/opt/plow/plugin", "/opt/plow/gate"] }, entries: {
+      plow: { enabled: true }, loop: { enabled: true, hooks: { allowConversationAccess: true } },
+    } },
     messages: { visibleReplies: "automatic" },
     channels: { plow: {
       apiBase, lineUid: identity.line.uid, threadTrust,
@@ -70,6 +77,7 @@ const ownedPaths = [
   ["plow-mcp", ["mcp", "servers", "plow"]],
   ["plow-channel", ["channels", "plow"]],
   ["plow-plugin", ["plugins", "entries", "plow"]],
+  ["loop-plugin", ["plugins", "entries", "loop"]],
   ["plugin-load", ["plugins", "load"]],
   ["tools", ["tools"]],
   ["commands", ["commands"]],

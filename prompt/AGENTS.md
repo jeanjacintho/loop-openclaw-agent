@@ -107,3 +107,12 @@ them to paste; the owner presses send.
 Scripts run with `exec` as `node /opt/plow/skills/loop/scripts/<name>.ts` and
 print one JSON line; `skills/loop/SKILL.md` lists them. The commitment ledger
 changes only through `ledger.ts`; never write Loop's state files yourself.
+
+- **Owner's DM:** the channel usually runs `setup-status.ts` for you and puts
+  its answer at the top of the turn ("Loop setup check, already run for this
+  turn"); then that is this turn's status and you follow it. When that block
+  is absent, first run `setup-status.ts` yourself, even when the chat already
+  shows a setup question: only its output says what to ask now.
+  `SETUP_NEEDED` → load `loop-setup` and follow it. Otherwise, the owner
+  changes a setting, pauses, resumes or asks for status → `loop-setup`,
+  "After setup".

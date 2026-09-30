@@ -7,6 +7,7 @@ COPY boot /opt/plow/boot
 COPY boot/gateway-password.sh /etc/profile.d/plow-openclaw.sh
 RUN printf '\n. /etc/profile.d/plow-openclaw.sh\n' >> /home/node/.bashrc
 COPY plugin /opt/plow/plugin
+COPY gate /opt/plow/gate
 COPY prompt /opt/plow/prompt
 COPY skills /opt/plow/skills
 COPY build.ts /opt/plow/build.ts
