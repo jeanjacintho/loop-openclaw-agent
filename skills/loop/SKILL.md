@@ -20,6 +20,7 @@ goes through these scripts.
 | `scan-imessage.ts` | `scan` \| `commit` \| `probe` | same shapes, for the owner's sent iMessages |
 | `detect.ts` | `record --item I --json '<extraction>'` | `{recorded:"commitment", created, band, commitment, ambiguous?}`, `{recorded:"update", change, commitment}`, `{recorded:"dropped"}` or `{recorded:"not_commitment"}` |
 | `people.ts` | `contacts-refresh` \| `role --person <handle\|id> --role R` \| `questions` \| `answer --a A --b B --same\|--different` \| `show --person P` | `{refreshed, contacts}`; `{person}`; `{questions:[{a, b}]}` (same name, no shared handle); `{kept, answer}`; `{people}` |
+| `feedback.ts` | `done\|not\|yes\|reopen --id X` \| `postpone\|snooze --id X --text T` \| `ignore --id X --by kind\|person` \| `note --chat U --text T --json J` | `{commitment}`; `not` → `{commitment, calibration:{raised, raise, precision, decisions}}`; `ignore` → `{rule, commitment}`; `note` → `{commitment, created}` |
 | `draft.ts` | `plan --id X` \| `create --id X --body TEXT` | `{plan:{channel, to, account?, threadId?, replyToMessageId?, what, deadline, originQuote}}`; `{channel, drafted, to, threadId?, text?, reason?, ownerAction?}` |
 | `resolve.ts` | `candidates` \| `nudges` \| `judge --commitment C --item I --verdict fulfilled\|partial\|unrelated\|cancelled [--quote Q]` | `{pairs:[{commitment, message, role, sameThread, sameObject, hasFile}]}`; `{action:"resolved"\|"looks_done"\|"dropped"\|"evidence"\|"none", commitment}` |
 | `digest.ts` | `pick` \| `sent` \| `alerts [--sent ID,…]` \| `item --n N` \| `why --n N\|--id X` (all take `[--now ISO]`) | `{send, text?, items, offline?}`; `{items}`; `{alerts:[{id, text}], quiet?}`; `{item}`; `{commitment, evidence}` |
@@ -33,7 +34,8 @@ goes through these scripts.
 | | `list [--status open[,candidate,…]] [--direction i_owe\|they_owe]` | `{commitments}` (default `open`) |
 | | `find --person <handle or name> [--all]` | `{commitments}` with that person on either side (live only unless `--all`) |
 | | `due --until ISO` | `{commitments}` open with a date deadline up to then |
-| | `stats` | counts by status, band and direction |
+| | `stats` | counts by status, band and direction; owner-verified `precision` by band and source; `calibration` |
+| | `calibrate` | `{raised, raise, precision, decisions}` (feedback.ts runs it) |
 | | `retain` | `{cleared}`: quotes of commitments closed > 90 days ago are erased |
 
 ## A commitment
