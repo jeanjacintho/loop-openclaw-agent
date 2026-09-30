@@ -10,7 +10,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { isMain, run } from "./cli.ts";
-import { parseFeatures, type Features } from "./confidence.ts";
+import { MAX_RAISE, parseFeatures, RAISE_STEP, type Features } from "./confidence.ts";
 import { withStore, type Store } from "./db.ts";
 import { parseHandle, sameHandle } from "./handles.ts";
 import { nowMs } from "./paths.ts";
@@ -548,13 +548,72 @@ export function dueBy(store: Store, until: string): Commitment[] {
       AND (status = 'open' OR (status = 'snoozed' AND expect_until <= ?)) ORDER BY deadline_at, id`, u, u);
 }
 
+// The owner's verdict on a detection: the first thing they did with it. Acting
+// on it (confirming, closing, moving, snoozing, chasing it) says it was real;
+// "not a commitment" says it was not.
+const RIGHT = ["confirmed", "resolved", "deadline_changed", "snoozed", "drafted", "nudged"];
+
+export type Decision = { id: number; band: "open" | "candidate"; source: Source; right: boolean; at: string };
+
+export function ownerDecisions(store: Store): Decision[] {
+  const rows = store.db.prepare(`SELECT c.id, c.band, (SELECT source FROM evidence WHERE commitment_id = c.id AND role = 'origin' ORDER BY id LIMIT 1) AS source,
+      e.kind, e.at FROM commitments c JOIN events e ON e.commitment_id = c.id
+      WHERE e.actor = 'owner' AND e.kind IN ('rejected', ${RIGHT.map(() => "?").join(", ")}) ORDER BY e.id`).all(...RIGHT) as
+    { id: number; band: "open" | "candidate"; source: Source; kind: string; at: string }[];
+  const seen = new Set<number>();
+  const out: Decision[] = [];
+  for (const r of rows) {
+    if (seen.has(r.id)) continue;
+    seen.add(r.id);
+    out.push({ id: r.id, band: r.band, source: r.source, right: r.kind !== "rejected", at: r.at });
+  }
+  return out;
+}
+
+function precisionOf(ds: Decision[]): { decisions: number; right: number; precision: number | null } {
+  const right = ds.filter((d) => d.right).length;
+  return { decisions: ds.length, right, precision: ds.length ? Number((right / ds.length).toFixed(2)) : null };
+}
+
 export function stats(store: Store): Record<string, unknown> {
   const count = (sql: string) => Object.fromEntries((store.db.prepare(sql).all() as { k: string; n: number }[]).map((r) => [r.k, r.n]));
+  const ds = ownerDecisions(store);
+  const group = <K extends string>(key: (d: Decision) => K) =>
+    Object.fromEntries([...new Set(ds.map(key))].map((k) => [k, precisionOf(ds.filter((d) => key(d) === k))]));
   return {
     byStatus: count("SELECT status AS k, count(*) AS n FROM commitments GROUP BY status"),
     byBand: count("SELECT band AS k, count(*) AS n FROM commitments GROUP BY band"),
     byDirection: count("SELECT direction AS k, count(*) AS n FROM commitments WHERE status IN ('candidate', 'open', 'snoozed') GROUP BY direction"),
+    dropped: count("SELECT band AS k, count(*) AS n FROM detections WHERE band IN ('drop', 'none') GROUP BY band"),
+    precision: { byBand: group((d) => d.band), bySource: group((d) => d.source), bySourceAndBand: group((d) => `${d.source}:${d.band}`) },
+    calibration: calibrationState(store),
   };
+}
+
+// When the owner's last 20 verdicts on "open" detections are less than 80%
+// right, the open cut goes up one step by itself (at most MAX_RAISE), and the
+// owner is told once. Only verdicts after the last raise count toward the next.
+export const CALIBRATE_WINDOW = 20;
+export const CALIBRATE_FLOOR = 0.8;
+
+export function calibrationState(store: Store): { raise: number; raisedAt: string | null } {
+  const row = store.db.prepare("SELECT open_raise, raised_at FROM calibration WHERE id = 1").get() as { open_raise: number; raised_at: string | null } | undefined;
+  return { raise: row?.open_raise ?? 0, raisedAt: row?.raised_at ?? null };
+}
+
+export function calibrate(store: Store, at = new Date(nowMs()).toISOString()): { raised: boolean; raise: number; precision: number | null; decisions: number } {
+  return store.tx(() => {
+    const state = calibrationState(store);
+    const recent = ownerDecisions(store).filter((d) => d.band === "open" && (!state.raisedAt || d.at > state.raisedAt)).slice(-CALIBRATE_WINDOW);
+    const p = precisionOf(recent);
+    if (recent.length < CALIBRATE_WINDOW || p.precision === null || p.precision >= CALIBRATE_FLOOR || state.raise >= MAX_RAISE) {
+      return { raised: false, raise: state.raise, precision: p.precision, decisions: recent.length };
+    }
+    const raise = Math.min(MAX_RAISE, state.raise + RAISE_STEP);
+    store.db.prepare(`INSERT INTO calibration (id, open_raise, raised_at) VALUES (1, ?, ?)
+        ON CONFLICT (id) DO UPDATE SET open_raise = excluded.open_raise, raised_at = excluded.raised_at`).run(raise, at);
+    return { raised: true, raise, precision: p.precision, decisions: recent.length };
+  });
 }
 
 // Everyone on the other side of a live commitment, with the handles to
@@ -605,7 +664,7 @@ function idArg(raw: string | undefined): number {
 }
 
 export const USAGE = "usage: ledger.ts add --json J | event --id X --kind K [--json P] [--actor A] | evidence --id X --json E | "
-  + "get --id X | list [--status S[,S]] [--direction D] | find --person P [--all] | due --until ISO | stats | retain";
+  + "get --id X | list [--status S[,S]] [--direction D] | find --person P [--all] | due --until ISO | stats | calibrate | retain";
 
 export function main(argv: string[]): unknown {
   const [cmd, ...rest] = argv;
@@ -645,6 +704,8 @@ export function main(argv: string[]): unknown {
         return { commitments: dueBy(store, values.until ?? "") };
       case "stats":
         return stats(store);
+      case "calibrate":
+        return calibrate(store);
       case "retain":
         return retain(store);
       default:

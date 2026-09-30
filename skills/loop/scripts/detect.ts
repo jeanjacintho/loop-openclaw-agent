@@ -22,11 +22,12 @@ import { withStore, type Store } from "./db.ts";
 import { resolveDeadline, type Resolved } from "./deadline.ts";
 import { isEmail, isPhone, normalizeHandle, sameHandle } from "./handles.ts";
 import {
-  addCommitment, addEvidence, appendEvent, getCommitment, LIVE, OBJECT_KINDS, TYPES,
+  addCommitment, addEvidence, appendEvent, calibrationState, getCommitment, LIVE, OBJECT_KINDS, personByHandle, TYPES,
   type Commitment, type CommitmentType, type Deadline, type Direction, type ObjectKind, type PersonInput,
 } from "./ledger.ts";
 import { nowMs } from "./paths.ts";
 import { enrich } from "./people.ts";
+import { ignored } from "./feedback.ts";
 import type { Candidate } from "./scan-common.ts";
 
 export type PersonRef = "owner" | { name?: string | null; handle?: string | null };
@@ -46,7 +47,7 @@ export type Extraction = {
 
 export type Recorded =
   | { recorded: "not_commitment" }
-  | { recorded: "dropped"; band: "drop"; score?: number }
+  | { recorded: "dropped"; band: "drop"; ignored?: true }
   | { recorded: "commitment"; created: boolean; band: Exclude<Band, "drop">; commitment: Commitment; ambiguous?: string }
   | { recorded: "update"; change: "deadline" | "cancel"; commitment: Commitment };
 
@@ -109,10 +110,6 @@ function logDetection(store: Store, c: Candidate, isCommitment: boolean, band: s
     .run(c.item, c.source, isCommitment ? 1 : 0, band, features ? JSON.stringify(features) : null, commitmentId, at);
 }
 
-export function calibrationRaise(store: Store): number {
-  const row = store.db.prepare("SELECT open_raise FROM calibration WHERE id = 1").get() as { open_raise: number } | undefined;
-  return row?.open_raise ?? 0;
-}
 
 // The person on the other side of a commitment, as a handle list.
 function otherSide(c: Commitment): string[] {
@@ -150,7 +147,7 @@ export function record(store: Store, candidate: Candidate, raw: unknown, config:
     });
   }
 
-  let band = bandOf(e.features!, calibrationRaise(store));
+  let band = bandOf(e.features!, calibrationState(store).raise);
   if (band === "drop") {
     logDetection(store, candidate, true, "drop", e.features, null, at);
     return { recorded: "dropped", band: "drop" };
@@ -160,6 +157,12 @@ export function record(store: Store, candidate: Candidate, raw: unknown, config:
   if (found.ambiguous) band = "candidate";
   // Their other handles and name from the owner's contacts, their role from the domain.
   const other = { ...found, person: enrich(found.person, undefined, config.domainRoles) };
+  // "Ignore this kind" / "ignore this person": counted, never recorded.
+  const knownId = other.person === "owner" ? undefined : (other.person.handles ?? []).map((h) => personByHandle(store, h)).find((x) => x !== undefined);
+  if (ignored(store, { objectKind: e.object_kind!, type: e.type!, personId: knownId ?? null })) {
+    logDetection(store, candidate, true, "drop", e.features, null, at);
+    return { recorded: "dropped", band: "drop", ignored: true };
+  }
   return store.tx(() => {
     const { commitment, created } = addCommitment(store, {
       direction: e.direction!, type: e.type!,
