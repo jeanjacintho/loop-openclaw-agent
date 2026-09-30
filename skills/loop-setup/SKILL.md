@@ -30,6 +30,13 @@ most, and two of them usually answer themselves.
      Before asking, run `plow-gog accounts` on the Mac (follow the Mac's
      `google-workspace` skill) and offer the Gmail accounts it lists. Loop
      reads only what the owner **sent**; say so if they ask.
+   Right after `sources` is recorded, while the owner is here, run the
+   probe of each source they turned on: `scan-mail.ts probe` and
+   `scan-imessage.ts probe`. Each runs, once, the exact command the
+   scheduled poll will run, so Latch asks now: tell the owner to choose
+   **Always allow**, or the 15-minute poll will be blocked while they are
+   away. A probe that is not `ok` → say which source and why in one line; if
+   it has an `ownerAction`, give it word for word. Setup still goes on.
 3. The first time the owner's language is clear, also run
    `record-setup.ts --field language --value <tag>` (like `pt-BR`, `en`).
    Never ask for it: scheduled digests are written in it.

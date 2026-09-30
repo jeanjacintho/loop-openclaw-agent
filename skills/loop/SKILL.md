@@ -16,6 +16,9 @@ goes through these scripts.
 | `record-setup.ts` | `--field F --value V` \| `--done` \| `--pause` \| `--resume` | before setup `{saved, next, question}`; after `{saved, config}`; `--done` → `{done, config}`; pause/resume → `{paused, config}` |
 | `register-crons.ts` | | `{paused, actions}`: makes the `loop-poll` and `loop-digest` jobs match the config (record-setup runs it for you) |
 | `owner-chat.ts` | | `{chatUid}`: the owner's DM |
+| `scan-mail.ts` | `scan` \| `commit` \| `probe` | `scan` → `{candidates, dropped, degraded, initialized?, failing?, disabled?}`; `commit` → `{pos, committed}`; `probe` → `{accounts:[{account, ok, reason?, ownerAction?}]}` |
+| `scan-imessage.ts` | `scan` \| `commit` \| `probe` | same shapes, for the owner's sent iMessages |
+| `cursor.ts` | `health` \| `get --source mail\|imessage` | `health` → per source `{lastOkAt, failingSince}` |
 | `mac-timezone.ts` | | `{timezone}` from the Mac, or `null` |
 | `ledger.ts` | `add --json '<commitment>'` \| `--json-file F` | `{commitment, created}`; `created:false` when the same (source, item, what) is already there |
 | | `event --id X --kind K [--json '<payload>'] [--actor owner\|loop\|auto]` | `{commitment}` after the event |
@@ -50,3 +53,16 @@ goes through these scripts.
   It changes only by events: `confirmed`, `rejected`, `deadline_changed`
   (`{"deadline":{…}}`), `snoozed` (`{"until":ISO}`), `resolved`, `reopened`,
   `dropped`, `nudged`, `drafted`.
+
+## Scans
+
+A scan never moves its cursor: it hands over `candidates` (the owner's own
+sent messages that passed the prefilter, oldest first, at most 40) and keeps
+them in a pending file; `commit` moves the cursor past them once they are in
+the ledger. A crash in between re-reads the same messages, and the ledger
+ignores an item it already has. Each candidate:
+`{source, item, thread, to, cc, toNames, sentAt, subject?, text, signals, attachments, links}`.
+`text` is only the owner's own words (quoted history removed). `degraded`
+lists what could not be read and why (`blocked` with Latch's `ownerAction`,
+`unreachable`, `mail-no-body`, `imessage-gap`); `failing.warn` is true once,
+30 minutes into a run of failures.
