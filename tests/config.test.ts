@@ -88,7 +88,20 @@ test("MCP sessions share the loopback bridge and expire after five idle minutes"
   assert.deepEqual(config.mcp, { sessionIdleTtlMs: 300_000, servers: { plow: {
     url: "http://127.0.0.1:18790/mcp", transport: "streamable-http",
     headers: { Authorization: "Bearer ${PLOW_MCP_BRIDGE_TOKEN}" },
+    requestTimeoutMs: 60_000,
   } } });
+});
+
+test("Loop's setup gate is loaded beside the channel plugin, with conversation access, as a Plow-owned setting", async t => {
+  const config = renderConfig(identity, "http://api:8000");
+  assert.deepEqual(config.plugins, {
+    load: { paths: ["/opt/plow/plugin", "/opt/plow/gate"] },
+    entries: { plow: { enabled: true }, loop: { enabled: true, hooks: { allowConversationAccess: true } } },
+  });
+  const { path, includes } = await configFixture(t);
+  await syncConfig(config, path, includes);
+  const owner = JSON5.parse(await readFile(path, "utf8"));
+  assert.deepEqual(owner.plugins.entries.loop, { $include: join(includes, "loop-plugin.json5") });
 });
 
 test("phone turns cannot block on ask_user", () => {

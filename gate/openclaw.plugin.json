@@ -1,0 +1,7 @@
+{
+  "id": "loop",
+  "name": "Loop",
+  "description": "Runs Loop's setup check before each of the owner's DM turns.",
+  "activation": { "onStartup": true },
+  "configSchema": { "type": "object", "additionalProperties": false }
+}
