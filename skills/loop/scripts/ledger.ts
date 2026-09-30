@@ -12,7 +12,7 @@ import { parseArgs } from "node:util";
 import { isMain, run } from "./cli.ts";
 import { parseFeatures, type Features } from "./confidence.ts";
 import { withStore, type Store } from "./db.ts";
-import { parseHandle } from "./handles.ts";
+import { parseHandle, sameHandle } from "./handles.ts";
 import { nowMs } from "./paths.ts";
 
 export type Direction = "i_owe" | "they_owe";
@@ -172,7 +172,10 @@ export function ownerId(store: Store, at: string): number {
 export function personByHandle(store: Store, raw: string): number | undefined {
   const h = parseHandle(raw);
   const row = store.db.prepare("SELECT person_id FROM handles WHERE kind = ? AND value_norm = ?").get(h.kind, h.value) as { person_id: number } | undefined;
-  return row?.person_id;
+  if (row || h.kind !== "phone") return row?.person_id;
+  // +5511988887777 from iMessage and 11 98888-7777 from Contacts are one phone.
+  const phones = store.db.prepare("SELECT person_id, value_norm FROM handles WHERE kind = 'phone'").all() as { person_id: number; value_norm: string }[];
+  return phones.find((p) => sameHandle(p.value_norm, h.value))?.person_id;
 }
 
 export function addHandle(store: Store, personId: number, raw: string): void {
@@ -189,16 +192,35 @@ export function ensurePerson(store: Store, input: PersonInput, at: string): numb
     const id = personByHandle(store, h);
     if (id !== undefined) {
       for (const other of handles) addHandle(store, id, other);
-      if (input.name?.trim()) {
-        store.db.prepare("UPDATE people SET display_name = coalesce(display_name, ?) WHERE id = ?").run(input.name.trim(), id);
-      }
+      store.db.prepare("UPDATE people SET display_name = coalesce(display_name, ?), org = coalesce(org, ?) WHERE id = ?")
+        .run(input.name?.trim() || null, input.org ?? null, id);
+      // A role the owner or the config gave is kept; only an unknown one is filled.
+      if (input.role && input.role !== "unknown") store.db.prepare("UPDATE people SET role = ? WHERE id = ? AND role = 'unknown'").run(input.role, id);
       return id;
     }
   }
   const id = Number(store.db.prepare("INSERT INTO people (display_name, role, org, created_at) VALUES (?, ?, ?, ?)")
     .run(input.name?.trim() || null, input.role ?? "unknown", input.org ?? null, at).lastInsertRowid);
   for (const h of handles) addHandle(store, id, h);
+  noteNamesakes(store, id, at);
   return id;
+}
+
+export const foldName = (name: string | null) => (name ?? "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
+
+// Someone new with the same name as someone known may be the same person on
+// another handle, or a different person. Loop never decides: it notes the
+// pair so the digest can ask the owner once.
+function noteNamesakes(store: Store, id: number, at: string): void {
+  const me = store.db.prepare("SELECT display_name FROM people WHERE id = ?").get(id) as { display_name: string | null };
+  const name = foldName(me.display_name);
+  if (!name) return;
+  const others = store.db.prepare("SELECT id, display_name FROM people WHERE id != ? AND is_owner = 0").all(id) as { id: number; display_name: string | null }[];
+  for (const o of others) {
+    if (foldName(o.display_name) !== name) continue;
+    const [a, b] = o.id < id ? [o.id, id] : [id, o.id];
+    store.db.prepare("INSERT OR IGNORE INTO person_questions (a_id, b_id, created_at) VALUES (?, ?, ?)").run(a, b, at);
+  }
 }
 
 export function personView(store: Store, id: number): PersonView {
@@ -407,7 +429,29 @@ export function checkNew(raw: NewCommitment): CheckedCommitment {
   };
 }
 
-export type AddResult = { commitment: Commitment; created: boolean };
+export type AddResult = { commitment: Commitment; created: boolean; merged?: true };
+
+export const REPEAT_WINDOW_DAYS = 7;
+const STOP = new Set([
+  "the", "a", "an", "to", "of", "for", "and", "on", "in", "with", "my", "your", "our", "you", "me", "it", "this", "that",
+  "o", "os", "as", "de", "do", "da", "dos", "das", "para", "pra", "pro", "te", "e", "no", "na", "com", "um", "uma", "meu", "minha", "seu", "sua",
+  "send", "sending", "share", "get", "give", "review", "pay", "prepare", "intro", "introduce", "reply", "update", "updated", "new",
+  "mandar", "enviar", "passar", "compartilhar", "revisar", "pagar", "preparar", "apresentar", "responder", "atualizar", "atualizado", "atualizada", "novo", "nova",
+]);
+
+export function objectWords(whatNorm: string): Set<string> {
+  return new Set(whatNorm.split(" ").filter((w) => w.length >= 4 && !STOP.has(w)));
+}
+
+// A live commitment between the same two people, about the same kind of
+// object, sharing a content word, detected in the last week.
+function findRepeat(store: Store, c: CheckedCommitment, debtorId: number, creditorId: number, at: string): number | undefined {
+  const since = new Date(Date.parse(at) - REPEAT_WINDOW_DAYS * 86_400_000).toISOString();
+  const rows = store.db.prepare(`SELECT id, what_norm FROM commitments WHERE debtor_id = ? AND creditor_id = ? AND direction = ? AND object_kind = ?
+      AND status IN ('candidate', 'open', 'snoozed') AND created_at >= ? ORDER BY id`).all(debtorId, creditorId, c.direction, c.objectKind, since) as { id: number; what_norm: string }[];
+  const mine = objectWords(normalizeWhat(c.what));
+  return rows.find((r) => [...objectWords(r.what_norm)].some((w) => mine.has(w)))?.id;
+}
 
 // Idempotent on (source, item, what) of the origin evidence: a scan that runs
 // again after a crash finds the commitment it already wrote.
@@ -420,6 +464,17 @@ export function addCommitment(store: Store, raw: NewCommitment, actor = "loop", 
     if (existing) return { commitment: getCommitment(store, existing.id), created: false };
     const debtorId = ensurePerson(store, c.debtor, at);
     const creditorId = ensurePerson(store, c.creditor, at);
+    // The same promise seen again (in mail and in a text, or twice in a
+    // week) is one commitment with more evidence, not a second commitment.
+    const same = findRepeat(store, c, debtorId, creditorId, at);
+    if (same !== undefined) {
+      for (const e of c.evidence) {
+        if (insertEvidence(store, same, { ...e, role: "update" }, at)) {
+          insertEvent(store, same, { kind: "evidence_added", payload: { item: e.item, role: "update", repeat: true }, actor, at });
+        }
+      }
+      return { commitment: getCommitment(store, same), created: false, merged: true };
+    }
     const status: Status = c.band === "open" ? "open" : "candidate";
     const id = Number(store.db.prepare(`INSERT INTO commitments (direction, type, debtor_id, creditor_id, what, what_norm, object_kind,
         features_json, dedupe_key, band, status, deadline_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', ?, ?)`)

@@ -19,6 +19,7 @@ goes through these scripts.
 | `scan-mail.ts` | `scan` \| `commit` \| `probe` | `scan` → `{candidates, dropped, degraded, initialized?, failing?, disabled?}`; `commit` → `{pos, committed}`; `probe` → `{accounts:[{account, ok, reason?, ownerAction?}]}` |
 | `scan-imessage.ts` | `scan` \| `commit` \| `probe` | same shapes, for the owner's sent iMessages |
 | `detect.ts` | `record --item I --json '<extraction>'` | `{recorded:"commitment", created, band, commitment, ambiguous?}`, `{recorded:"update", change, commitment}`, `{recorded:"dropped"}` or `{recorded:"not_commitment"}` |
+| `people.ts` | `contacts-refresh` \| `role --person <handle\|id> --role R` \| `questions` \| `answer --a A --b B --same\|--different` \| `show --person P` | `{refreshed, contacts}`; `{person}`; `{questions:[{a, b}]}` (same name, no shared handle); `{kept, answer}`; `{people}` |
 | `deadline.ts` | `--text T --sent-at ISO [--tz Z] [--locale L] [--type promise\|request…]` | `{kind:"date", at, text, certainty}`, `{kind:"event", event, text, certainty}` or `{kind:"none", text}` (+ `inferred` with `--type`) |
 | `cursor.ts` | `health` \| `get --source mail\|imessage` | `health` → per source `{lastOkAt, failingSince}` |
 | `mac-timezone.ts` | | `{timezone}` from the Mac, or `null` |
@@ -68,3 +69,15 @@ ignores an item it already has. Each candidate:
 lists what could not be read and why (`blocked` with Latch's `ownerAction`,
 `unreachable`, `mail-no-body`, `imessage-gap`); `failing.warn` is true once,
 30 minutes into a run of failures.
+
+## People
+
+A person is matched by handle only: the exact email or phone (phones on
+their last digits), or any other handle the owner's contacts list for them.
+Never by name: two Pedros stay two people, and the digest asks the owner once
+whether they are the same (`people.ts questions` / `answer`). A role
+(`investor`, `customer`, `team`, `partner`, `other`) comes from the owner
+("Michael is an investor" → `people.ts role`) or from `config.domainRoles`.
+The same commitment seen again within a week (the same two people, the same
+kind of object, a shared word, as in "send the deck" by email and "mando o
+deck" by text) becomes more evidence on the first one.

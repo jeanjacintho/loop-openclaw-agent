@@ -65,6 +65,10 @@ source had no answer (no name on Plow, the Mac not connected): ask the owner.
   `config.sources` in `setup-status.ts` and change only that source.
 - "People at fund.vc are investors" → `record-setup.ts --field domainRoles
   --value '<the whole map>'`: start from `config.domainRoles` and add to it.
+- "Michael is an investor" / "o Lucas é do time" → `people.ts role --person
+  <their handle> --role investor|customer|team|partner|other`; find the
+  handle with `people.ts show --person <name>`. If several people match,
+  ask which one.
 - "Pause Loop" / "pausa o Loop" → `record-setup.ts --pause`. "Resume" →
   `record-setup.ts --resume`. Pausing disables both jobs: a paused Loop reads
   nothing and sends nothing. A new digest time or time zone moves the digest

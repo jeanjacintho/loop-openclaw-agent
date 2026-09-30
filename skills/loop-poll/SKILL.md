@@ -14,7 +14,10 @@ channel `plow`, accountId `chat`, target the printed `chatUid`. Write in
 
 1. Run `setup-status.ts`. If it is not `READY`, or `config.paused` is true,
    end silently.
-2. For each source, `scan-mail.ts` then `scan-imessage.ts`:
+2. Run `people.ts contacts-refresh`. It reads the owner's contacts at most
+   once a day, so one person's email and phone count as the same person. A
+   failure here changes nothing below; go on.
+3. For each source, `scan-mail.ts` then `scan-imessage.ts`:
    1. Run `scan-<source>.ts scan`. `disabled` → next source.
    2. If `failing.warn` is true, send the owner one DM saying Loop can't read
       their <email / iMessages> right now, so the list may be missing things;
@@ -28,7 +31,7 @@ channel `plow`, accountId `chat`, target the printed `chatUid`. Write in
       record `{"is_commitment":false}` for it and go on.
    4. Run `scan-<source>.ts commit`. Only after every candidate is recorded:
       commit moves past them for good.
-3. End silently. The poll never tells the owner what it recorded; the digest
+4. End silently. The poll never tells the owner what it recorded; the digest
    does.
 
 ## Extract
