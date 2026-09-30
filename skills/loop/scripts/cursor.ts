@@ -26,8 +26,11 @@ export type Pending<P, C> = { scannedAt: string; next: P; candidates: C[]; evide
 
 export const WARN_AFTER_MS = 30 * 60_000;
 
+// The setup look-back keeps its candidates in a pending file too, with no cursor.
+export type PendingName = SourceName | "backfill";
+
 const cursorPath = (source: SourceName) => file(`cursor-${source}.json`);
-const pendingPath = (source: SourceName) => file(`pending-${source}.json`);
+const pendingPath = (source: PendingName) => file(`pending-${source}.json`);
 
 export function readCursor<P>(source: SourceName): Cursor<P> {
   return readJson<Cursor<P>>(cursorPath(source), { pos: null });
@@ -60,11 +63,11 @@ export function ok(source: SourceName, now = nowMs()): Cursor<unknown> {
   return updateJson<Cursor<unknown>>(cursorPath(source), { pos: null }, (c) => markOk(c, now));
 }
 
-export function savePending<P, C>(source: SourceName, pending: Pending<P, C>): void {
+export function savePending<P, C>(source: PendingName, pending: Pending<P, C>): void {
   writeJson(pendingPath(source), pending);
 }
 
-export function readPending<P, C>(source: SourceName): Pending<P, C> | null {
+export function readPending<P, C>(source: PendingName): Pending<P, C> | null {
   return readJson<Pending<P, C> | null>(pendingPath(source), null);
 }
 

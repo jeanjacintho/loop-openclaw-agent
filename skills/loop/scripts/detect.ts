@@ -17,7 +17,7 @@ import { parseArgs } from "node:util";
 import { isMain, run } from "./cli.ts";
 import { band as bandOf, parseFeatures, type Band, type Features } from "./confidence.ts";
 import { loadConfig, type Config } from "./config.ts";
-import { readPending, type SourceName } from "./cursor.ts";
+import { readPending, type PendingName } from "./cursor.ts";
 import { withStore, type Store } from "./db.ts";
 import { resolveDeadline, type Resolved } from "./deadline.ts";
 import { isEmail, isPhone, normalizeHandle, sameHandle } from "./handles.ts";
@@ -53,9 +53,9 @@ export type Recorded =
 
 // The pending scans, and the backfill's (LP-13), are the only places a candidate comes from.
 export function findCandidate(item: string): Candidate {
-  const sources: (SourceName | "backfill")[] = ["mail", "imessage", "backfill"];
+  const sources: PendingName[] = ["mail", "imessage", "backfill"];
   for (const s of sources) {
-    const pending = readPending<unknown, Candidate>(s as SourceName);
+    const pending = readPending<unknown, Candidate>(s);
     const found = pending?.candidates.find((c) => c.item === item);
     if (found) return found;
   }
@@ -169,6 +169,7 @@ export function record(store: Store, candidate: Candidate, raw: unknown, config:
       debtor: e.direction === "i_owe" ? "owner" : other.person,
       creditor: e.direction === "i_owe" ? other.person : "owner",
       what: e.what!, objectKind: e.object_kind!, band: band as "open" | "candidate", deadline, features: e.features, evidence: [evidence],
+      ...(candidate.backfill ? { backfill: true } : {}),
     }, "loop", at);
     if (created) logDetection(store, candidate, true, band, e.features, commitment.id, at);
     return { recorded: "commitment" as const, created, band: band as "open" | "candidate", commitment, ...(other.ambiguous ? { ambiguous: other.ambiguous } : {}) };

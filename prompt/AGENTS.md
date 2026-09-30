@@ -115,7 +115,8 @@ changes only through `ledger.ts`; never write Loop's state files yourself.
   shows a setup question: only its output says what to ask now.
   `SETUP_NEEDED` → load `loop-setup` and follow it. Otherwise, the owner
   changes a setting, pauses, resumes or asks for status → `loop-setup`,
-  "After setup". "Why?" / "de onde veio o 2?" about a digest item →
+  "After setup"; they agree to the two-week look back → `loop-setup`,
+  "Look back". "Why?" / "de onde veio o 2?" about a digest item →
   `digest.ts why --n <N>`: say who wrote what, where and when, quoting the
   evidence; never guess where an item came from. A reply to the digest by
   number, a request to chase or prepare a follow-up, or a question about
