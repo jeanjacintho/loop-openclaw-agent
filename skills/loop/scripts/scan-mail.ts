@@ -16,12 +16,29 @@ import { bareAddress, isEmail, normalizeHandle } from "./handles.ts";
 import { callMac, type BridgeOptions, type MacCommand } from "./mac.ts";
 import { nowMs } from "./paths.ts";
 import { ownText, type Message } from "./prefilter.ts";
-import { CAP, countLinks, list, rowsOf, TEXT_MAX, toIso, walk, type Candidate } from "./scan-common.ts";
+import { withStore } from "./db.ts";
+import { liveCounterparties } from "./ledger.ts";
+import { CAP, countLinks, involves, list, rowsOf, TEXT_MAX, toIso, walk, type Candidate, type EvidenceMessage } from "./scan-common.ts";
 
 export const SENT_QUERY = "in:sent newer_than:2d";
 
 export function SENT_ARGV(account: string): string[] {
   return ["plow-gog", "gmail", "search", SENT_QUERY, "--max", "25", "--json", "--account", account];
+}
+
+// Mail from the people Loop is waiting on, read only while some commitment is
+// live, with its own fixed argv, and filtered locally to those people.
+export const RECEIVED_QUERY = "in:inbox newer_than:2d";
+
+export function RECEIVED_ARGV(account: string): string[] {
+  return ["plow-gog", "gmail", "search", RECEIVED_QUERY, "--max", "50", "--json", "--account", account];
+}
+
+export function receivedCommand(account: string): MacCommand {
+  return {
+    argv: RECEIVED_ARGV(account), readPaths: [], timeoutMs: 60_000,
+    goal: "Loop: check recent email from the people who owe you something, to notice when they deliver",
+  };
 }
 
 export function sentCommand(account: string): MacCommand {
@@ -36,7 +53,7 @@ export type MailRow = {
   body: string | null; snippet: string; attachments: number; listId: string | null; autoSubmitted: boolean;
 };
 export type MailPos = { at: string; ids: string[] };
-export type MailCursor = Record<string, MailPos>; // per account
+export type MailCursor = Record<string, MailPos>; // per account; "<account>#inbox" for received mail
 
 function header(r: Record<string, unknown>, name: string): string | null {
   const h = r.headers;
@@ -104,6 +121,7 @@ export type ScanResult = {
   source: "mail";
   disabled?: true;
   candidates: Candidate[];
+  evidence: EvidenceMessage[];
   dropped: Record<string, number>;
   degraded: { account?: string; reason: string; detail?: string; ownerAction?: string }[];
   initialized?: string[];
@@ -112,11 +130,21 @@ export type ScanResult = {
 
 export async function scanMail(opts: BridgeOptions = {}, now = nowMs()): Promise<ScanResult> {
   const config = loadConfig();
-  const result: ScanResult = { source: "mail", candidates: [], dropped: {}, degraded: [] };
+  const result: ScanResult = { source: "mail", candidates: [], evidence: [], dropped: {}, degraded: [] };
   const accounts = config.sources.mail?.accounts ?? [];
   if (!accounts.length) return { ...result, disabled: true };
   const cursor = readCursor<MailCursor>("mail").pos ?? {};
   const next: MailCursor = {};
+  const known = withStore((st) => liveCounterparties(st)).flatMap((c) => c.handles);
+  const text = (r: MailRow) => ownText(r.body ?? [r.subject, r.snippet].filter(Boolean).join("\n")).slice(0, TEXT_MAX);
+  const evidence = (account: string, r: MailRow, direction: "sent" | "received"): EvidenceMessage => {
+    const t = text(r);
+    return {
+      source: "gmail", item: `gmail:${account}:${r.thread}@${r.id}`, thread: r.thread, direction,
+      from: direction === "sent" ? "owner" : r.from, to: direction === "sent" ? [...r.to, ...r.cc] : ["owner"],
+      sentAt: r.at, text: t, attachments: r.attachments, links: countLinks(t),
+    };
+  };
   let noBody = 0;
   let failed = false;
   for (const account of accounts) {
@@ -147,9 +175,8 @@ export async function scanMail(opts: BridgeOptions = {}, now = nowMs()): Promise
     const walked = walk(fresh, (r) => {
       if (r.from && r.from !== normalizeHandle(account)) return { skip: "not_from_owner" };
       if (r.body === null) noBody++;
-      const text = ownText(r.body ?? [r.subject, r.snippet].filter(Boolean).join("\n")).slice(0, TEXT_MAX);
       const m: Message = {
-        text, subject: r.subject, recipients: [...r.to, ...r.cc], ownerHandles: accounts,
+        text: text(r), subject: r.subject, recipients: [...r.to, ...r.cc], ownerHandles: accounts,
         attachments: r.attachments, listId: r.listId, autoSubmitted: r.autoSubmitted,
       };
       return m;
@@ -162,11 +189,35 @@ export async function scanMail(opts: BridgeOptions = {}, now = nowMs()): Promise
     const upTo = walked.last ? fresh.slice(0, fresh.indexOf(walked.last) + 1) : [];
     const moved = after(upTo);
     if (moved) next[account] = moved;
+    // What the owner sent to someone with a live commitment: maybe the delivery.
+    for (const r of upTo) if (involves([...r.to, ...r.cc], known)) result.evidence.push(evidence(account, r, "sent"));
+
+    if (!known.length) continue;
+    const inbox = `${account}#inbox`;
+    const got = await callMac(receivedCommand(account), opts);
+    if (!got.ok) {
+      failed = true;
+      result.degraded.push({ account, reason: got.reason, detail: `inbox: ${got.detail ?? ""}`.trim(), ...(got.ownerAction ? { ownerAction: got.ownerAction } : {}) });
+      continue;
+    }
+    let received: MailRow[];
+    try {
+      received = parseMailRows(got.output).rows;
+    } catch (err) {
+      failed = true;
+      result.degraded.push({ account, reason: "unreadable", detail: `inbox: ${(err as Error).message}` });
+      continue;
+    }
+    const inPos = cursor[inbox];
+    const newIn = inPos ? received.filter((r) => isNew(r, inPos)) : [];
+    next[inbox] = after(inPos ? newIn : received) ?? inPos ?? { at: new Date(now).toISOString(), ids: [] };
+    // Only the people Loop is waiting on; everyone else's mail is never handed over.
+    for (const r of newIn) if (r.from && involves([r.from], known)) result.evidence.push(evidence(account, r, "received"));
   }
   if (noBody) result.degraded.push({ reason: "mail-no-body", detail: `${noBody} sent message(s) came without a body; read from subject and snippet` });
   if (failed) result.failing = fail("mail", now);
   else ok("mail", now);
-  savePending("mail", { scannedAt: new Date(now).toISOString(), next, candidates: result.candidates });
+  savePending("mail", { scannedAt: new Date(now).toISOString(), next, candidates: result.candidates, evidence: result.evidence });
   return result;
 }
 

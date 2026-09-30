@@ -557,6 +557,23 @@ export function stats(store: Store): Record<string, unknown> {
   };
 }
 
+// Everyone on the other side of a live commitment, with the handles to
+// recognise their messages by: what the scans look for as evidence.
+export type Counterparty = { personId: number; handles: string[]; commitments: { id: number; side: "debtor" | "creditor" }[] };
+
+export function liveCounterparties(store: Store): Counterparty[] {
+  const rows = store.db.prepare(`SELECT id, direction, debtor_id, creditor_id FROM commitments WHERE status IN ('candidate', 'open', 'snoozed')`).all() as
+    { id: number; direction: Direction; debtor_id: number; creditor_id: number }[];
+  const byPerson = new Map<number, Counterparty>();
+  for (const r of rows) {
+    const [personId, side] = r.direction === "i_owe" ? [r.creditor_id, "creditor" as const] : [r.debtor_id, "debtor" as const];
+    const cp = byPerson.get(personId) ?? { personId, handles: personView(store, personId).handles.filter((h) => !h.startsWith("plow:")), commitments: [] };
+    cp.commitments.push({ id: r.id, side });
+    byPerson.set(personId, cp);
+  }
+  return [...byPerson.values()];
+}
+
 // Retention: a commitment closed more than `days` ago keeps who, what and
 // when, but loses the quoted text of its evidence.
 export const RETAIN_DAYS = 90;

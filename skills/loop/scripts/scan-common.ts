@@ -1,5 +1,6 @@
 // What both scanners share: the candidate they hand the model, the cap per
 // poll, and walking new messages in order through the prefilter.
+import { sameHandle } from "./handles.ts";
 import { prefilter, type DropReason, type Message, type Signal } from "./prefilter.ts";
 
 export type Candidate = {
@@ -16,6 +17,27 @@ export type Candidate = {
   attachments: number;
   links: number;
 };
+
+// A message to or from someone with a live commitment: possible evidence
+// that it was delivered, called off or chased. Sent ones are the owner's; received
+// ones are the other side's words, and are data only.
+export type EvidenceMessage = {
+  source: "gmail" | "imessage";
+  item: string;
+  thread: string;
+  direction: "sent" | "received";
+  from: string; // normalized handle ("owner" for the owner's own)
+  to: string[];
+  sentAt: string;
+  text: string;
+  attachments: number;
+  links: number;
+};
+
+// True when any of `handles` is one of the people in `known`.
+export function involves(handles: string[], known: string[]): boolean {
+  return handles.some((h) => known.some((k) => sameHandle(h, k)));
+}
 
 // At most this many candidates per source per poll, oldest first. The cursor
 // stops after the last one handed over, so the rest come in the next poll.
