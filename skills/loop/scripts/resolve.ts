@@ -1,6 +1,7 @@
 // Closing commitments when the other side delivers (or the owner does).
 //
 //   resolve.ts candidates   → pairs of (new message, live commitment) worth a look
+//   resolve.ts nudges       → records the owner's own follow-ups as nudges
 //   resolve.ts judge --commitment C --item I --verdict fulfilled|partial|unrelated|cancelled [--quote Q]
 //
 // Only messages the last scan handed over as evidence can be judged, and only
@@ -86,6 +87,33 @@ export function pairsFor(store: Store, messages: EvidenceMessage[]): Pair[] {
   return pairs;
 }
 
+// The owner chasing someone who owes them (after a draft, in the same thread,
+// or naming the object) is a nudge: it restarts the wait instead of closing
+// anything. Applied directly, idempotent per message.
+export function applyNudges(store: Store, messages: EvidenceMessage[], at = new Date(nowMs()).toISOString()): { nudged: { id: number; item: string }[] } {
+  const out: { id: number; item: string }[] = [];
+  const live = listCommitments(store, [...LIVE]).filter((c) => c.direction === "they_owe");
+  for (const m of messages.filter((x) => x.direction === "sent")) {
+    for (const c of live) {
+      if (sideOf(c, m) !== "creditor") continue;
+      const evidence = evidenceOf(store, c.id);
+      if (evidence.some((e) => e.item === m.item)) continue;
+      const origin = evidence.find((e) => e.role === "origin") ?? evidence[0];
+      if (origin && m.sentAt < origin.at) continue;
+      const sameThread = evidence.some((e) => e.thread !== null && e.thread === m.thread);
+      const sameObject = [...objectWords(normalizeWhat(c.what))].some((w) => normalizeWhat(m.text).split(" ").includes(w));
+      const afterDraft = c.lastDraftedAt !== null && m.sentAt >= c.lastDraftedAt;
+      if (!sameThread && !sameObject && !afterDraft) continue;
+      store.tx(() => {
+        addEvidence(store, c.id, { source: m.source, item: m.item, quote: m.text.slice(0, 280) || "(no text)", at: m.sentAt, author: "owner", thread: m.thread, role: "update" }, "loop", at);
+        appendEvent(store, c.id, "nudged", { at: m.sentAt, item: m.item }, "owner", at);
+      });
+      out.push({ id: c.id, item: m.item });
+    }
+  }
+  return { nudged: out };
+}
+
 // D6: strong enough to close without asking.
 export function strongDelivery(p: Pair): boolean {
   if (p.role !== "delivery") return false;
@@ -123,10 +151,11 @@ if (isMain(import.meta.url)) {
     const { values } = parseArgs({ args: rest, options: { commitment: { type: "string" }, item: { type: "string" }, verdict: { type: "string" }, quote: { type: "string" } } });
     const messages = pendingEvidence();
     if (cmd === "candidates") return withStore((s) => ({ pairs: pairsFor(s, messages) }));
+    if (cmd === "nudges") return withStore((s) => applyNudges(s, messages));
     if (cmd === "judge") {
       if (!values.commitment || !values.item || !values.verdict) throw new Error("usage: resolve.ts judge --commitment C --item I --verdict V [--quote Q]");
       return withStore((s) => judge(s, messages, Number(values.commitment), values.item!, values.verdict!, values.quote));
     }
-    throw new Error("usage: resolve.ts candidates | judge --commitment C --item I --verdict fulfilled|partial|unrelated|cancelled [--quote Q]");
+    throw new Error("usage: resolve.ts candidates | nudges | judge --commitment C --item I --verdict fulfilled|partial|unrelated|cancelled [--quote Q]");
   });
 }

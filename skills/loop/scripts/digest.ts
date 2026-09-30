@@ -26,6 +26,7 @@ export const MAX_CANDIDATES = 2;
 export const QUIET = { from: 21, to: 8 }; // no real-time message in this window
 export const REPEAT_AFTER_DAYS = 3; // the same items are not sent again before this
 export const STALE_READ_HOURS = 2; // "haven't read new messages since…"
+export const NUDGE_WAIT_DAYS = 2; // after the owner chases, the wait starts again
 
 export type Kind = "critical" | "i_owe" | "they_owe" | "looks_done" | "candidate" | "same_person";
 export type Item = { n: number; kind: Kind; commitmentId?: number; people?: [number, number]; text: string };
@@ -144,7 +145,9 @@ export function pickItems(store: Store, config: Pick<Config, "timezone" | "langu
   };
   for (const c of live) if (isCritical(store, c, now, tz)) push("critical", c);
   for (const c of live.filter((x) => x.direction === "i_owe" && overdue(x))) push("i_owe", c);
-  const theirs = live.filter((x) => x.direction === "they_owe" && overdue(x));
+  // After the owner chased it, give the other side a couple of days before listing it again.
+  const waiting = (c: Commitment) => c.lastNudgedAt !== null && now - Date.parse(c.lastNudgedAt) < NUDGE_WAIT_DAYS * 86_400_000;
+  const theirs = live.filter((x) => x.direction === "they_owe" && overdue(x) && !waiting(x));
   for (const c of [...theirs.filter((x) => blocksAnother(store, x.id)), ...theirs]) push("they_owe", c);
   for (const c of listCommitments(store, ["open", "snoozed", "candidate"]).filter((x) => looksDone(store, x))) push("looks_done", c);
   let candidates = 0;
