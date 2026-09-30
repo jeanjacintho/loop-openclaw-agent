@@ -34,9 +34,11 @@ most, and two of them usually answer themselves.
    `record-setup.ts --field language --value <tag>` (like `pt-BR`, `en`).
    Never ask for it: scheduled digests are written in it.
 4. On a script error, say the problem in one line and ask again.
-5. When the output has `next: null`, run `record-setup.ts --done`, then
-   confirm in one or two lines that Loop is on: which sources it reads and
-   when the digest comes. If `--done` fails, show its error line.
+5. When the output has `next: null`, run `record-setup.ts --done`. It saves
+   the settings and registers Loop's two jobs (the poll every 15 minutes and
+   the daily digest). Then confirm in one or two lines that Loop is on: which
+   sources it reads and when the digest comes. If `--done` fails, show its
+   error line; running it again is safe.
 
 Never skip a question, invent an answer or fill one in from a guess.
 
@@ -57,7 +59,9 @@ source had no answer (no name on Plow, the Mac not connected): ask the owner.
 - "People at fund.vc are investors" → `record-setup.ts --field domainRoles
   --value '<the whole map>'`: start from `config.domainRoles` and add to it.
 - "Pause Loop" / "pausa o Loop" → `record-setup.ts --pause`. "Resume" →
-  `record-setup.ts --resume`. A paused Loop reads nothing and sends nothing.
+  `record-setup.ts --resume`. Pausing disables both jobs: a paused Loop reads
+  nothing and sends nothing. A new digest time or time zone moves the digest
+  job by itself.
 - "Status" → summarize `setup-status.ts`: sources, digest time, and whether
   it is paused.
 
