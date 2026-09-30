@@ -1,0 +1,17 @@
+{
+  "name": "@plow/openclaw-agent-checks",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "26.6.2",
+    "@types/ws": "8.18.1",
+    "openclaw": "2026.9.6",
+    "typescript": "6.0.3"
+  },
+  "workspaces": [
+    "plugin"
+  ],
+  "dependencies": {
+    "json5": "^2.2.3"
+  }
+}
