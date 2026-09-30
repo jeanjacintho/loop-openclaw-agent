@@ -33,7 +33,9 @@ channel `plow`, accountId `chat`, target the printed `chatUid`. Write in
       below and run `resolve.ts judge --commitment <id> --item <item>
       --verdict <verdict> [--quote "<sentence>"]`. The script decides whether
       that closes the commitment or only asks the owner in the digest.
-   5. Run `scan-<source>.ts commit`. Only after every candidate and pair is
+   5. Run `resolve.ts nudges`: the owner's own follow-ups to people who owe
+      them are recorded, and restart the wait. Nothing to send.
+   6. Run `scan-<source>.ts commit`. Only after every candidate and pair is
       recorded: commit moves past them for good.
 4. Run `digest.ts alerts`. For each alert (only critical ones: due today to
    an investor or customer, or blocking something else), send its `text` to

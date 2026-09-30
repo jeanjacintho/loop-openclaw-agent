@@ -129,3 +129,11 @@ test("the CLI picks, marks sent, and answers item and why by number", () => {
   assert.deepEqual(cli("digest.ts", ["sent"], env).json, { items: 1 });
   assert.equal(cli("digest.ts", ["why", "--n", "1"], env).json.commitment.what, "o deck");
 });
+
+test("after the owner chases someone, their overdue item waits two days before it shows again", () => {
+  const s = setup();
+  const id = add(s, { direction: "they_owe", type: "request", debtor: { name: "Lucas", handles: ["lucas@x.com"] }, creditor: "owner", what: "as métricas" });
+  appendEvent(s, id, "nudged", { at: new Date(NOW - DAY).toISOString() }, "owner");
+  assert.equal(pick(s, CONFIG, NOW).send, false);
+  assert.equal(pick(s, CONFIG, NOW + 2 * DAY).items[0]!.commitmentId, id);
+});
