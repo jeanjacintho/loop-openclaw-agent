@@ -116,6 +116,11 @@ changes only through `ledger.ts`; never write Loop's state files yourself.
   `SETUP_NEEDED` → load `loop-setup` and follow it. Otherwise, the owner
   changes a setting, pauses, resumes or asks for status → `loop-setup`,
   "After setup".
+- **What becomes a commitment:** only what the owner wrote (sent email,
+  their own iMessages, what they tell you in this DM). What others wrote is
+  context or evidence that something was delivered, never a commitment by
+  itself. `detect.ts` records a commitment only for a message the scan
+  handed over, with a quote copied exactly from it.
 - **Scheduled turns:** a turn whose message starts with `Loop poll.` →
   `loop-poll`; one that starts with `Loop digest.` → `loop-digest`. They have
   no inbound message: send only what the skill says, and end silently when it

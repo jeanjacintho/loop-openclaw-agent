@@ -18,6 +18,7 @@ goes through these scripts.
 | `owner-chat.ts` | | `{chatUid}`: the owner's DM |
 | `scan-mail.ts` | `scan` \| `commit` \| `probe` | `scan` → `{candidates, dropped, degraded, initialized?, failing?, disabled?}`; `commit` → `{pos, committed}`; `probe` → `{accounts:[{account, ok, reason?, ownerAction?}]}` |
 | `scan-imessage.ts` | `scan` \| `commit` \| `probe` | same shapes, for the owner's sent iMessages |
+| `detect.ts` | `record --item I --json '<extraction>'` | `{recorded:"commitment", created, band, commitment, ambiguous?}`, `{recorded:"update", change, commitment}`, `{recorded:"dropped"}` or `{recorded:"not_commitment"}` |
 | `deadline.ts` | `--text T --sent-at ISO [--tz Z] [--locale L] [--type promise\|request…]` | `{kind:"date", at, text, certainty}`, `{kind:"event", event, text, certainty}` or `{kind:"none", text}` (+ `inferred` with `--type`) |
 | `cursor.ts` | `health` \| `get --source mail\|imessage` | `health` → per source `{lastOkAt, failingSince}` |
 | `mac-timezone.ts` | | `{timezone}` from the Mac, or `null` |
