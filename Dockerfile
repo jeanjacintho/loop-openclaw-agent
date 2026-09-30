@@ -43,6 +43,11 @@ RUN cd /opt/plow && npm ci --omit=dev --omit=peer --omit=optional --ignore-scrip
 # What the Agent Index page says the agent runs on. Without it the page falls
 # back to its Hermes placeholder; a variant can override it.
 ENV AGENT_RUNTIME=OpenClaw
+# Which agent this reports as on the Agent Index. A cloud install runs the
+# image with no compose file, so this is the only place the id can come from.
+ENV AGENT_ID=loop \
+    AGENT_NAME=Loop \
+    AGENT_BLURB="Your follow-through agent. It finds what you promised and what you asked for in the email and texts you already sent, tracks who owes what and by when, and hands you the follow-up ready to send. Quiet when everything is on track."
 ENV OPENCLAW_STATE_DIR=/var/lib/plow OPENCLAW_CONFIG_PATH=/var/lib/plow/openclaw.json OPENCLAW_INCLUDE_ROOTS=/etc/plow/openclaw OPENCLAW_NO_RESPAWN=1 NODE_DISABLE_COMPILE_CACHE=1
 # The inherited healthcheck loads config and can race the boot state lock.
 HEALTHCHECK NONE
