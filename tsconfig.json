@@ -16,6 +16,8 @@
   "include": [
     "boot/**/*.ts",
     "plugin/*.ts",
-    "build.ts"
+    "build.ts",
+    "skills/**/*.ts",
+    "tests/helpers.ts"
   ]
 }

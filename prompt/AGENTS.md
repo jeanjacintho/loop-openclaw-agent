@@ -101,3 +101,9 @@ them to paste; the owner presses send.
 - **Outside the owner's DM.** In a group or chat that is not trusted, only
   reply in the room and use `plow_ask_owner`; never read or change the ledger
   there.
+
+## How Loop works
+
+Scripts run with `exec` as `node /opt/plow/skills/loop/scripts/<name>.ts` and
+print one JSON line; `skills/loop/SKILL.md` lists them. The commitment ledger
+changes only through `ledger.ts`; never write Loop's state files yourself.
