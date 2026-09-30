@@ -26,6 +26,7 @@ import {
   type Commitment, type CommitmentType, type Deadline, type Direction, type ObjectKind, type PersonInput,
 } from "./ledger.ts";
 import { nowMs } from "./paths.ts";
+import { enrich } from "./people.ts";
 import type { Candidate } from "./scan-common.ts";
 
 export type PersonRef = "owner" | { name?: string | null; handle?: string | null };
@@ -118,7 +119,7 @@ function otherSide(c: Commitment): string[] {
   return (c.direction === "i_owe" ? c.creditor : c.debtor).handles;
 }
 
-export function record(store: Store, candidate: Candidate, raw: unknown, config: Pick<Config, "timezone" | "language">, at = new Date(nowMs()).toISOString()): Recorded {
+export function record(store: Store, candidate: Candidate, raw: unknown, config: Pick<Config, "timezone" | "language" | "domainRoles">, at = new Date(nowMs()).toISOString()): Recorded {
   const e = checkExtraction(raw);
   if (!e.is_commitment) {
     logDetection(store, candidate, false, "none", undefined, null, at);
@@ -155,8 +156,10 @@ export function record(store: Store, candidate: Candidate, raw: unknown, config:
     return { recorded: "dropped", band: "drop" };
   }
   // The owner is always one side; the other comes from the recipients.
-  const other = counterparty(candidate, e.direction === "i_owe" ? e.creditor : e.debtor);
-  if (other.ambiguous) band = "candidate";
+  const found = counterparty(candidate, e.direction === "i_owe" ? e.creditor : e.debtor);
+  if (found.ambiguous) band = "candidate";
+  // Their other handles and name from the owner's contacts, their role from the domain.
+  const other = { ...found, person: enrich(found.person, undefined, config.domainRoles) };
   return store.tx(() => {
     const { commitment, created } = addCommitment(store, {
       direction: e.direction!, type: e.type!,

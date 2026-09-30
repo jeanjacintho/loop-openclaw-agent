@@ -39,8 +39,8 @@ test("an evidence item without a known prefix is refused", () => {
     assert.throws(() => addCommitment(s, deck({ evidence: [{ source: "gmail", item, quote: "q", at: AT }] })), /evidence item/, item);
   }
   assert.throws(() => addCommitment(s, deck({ evidence: [{ source: "imessage", item: "gmail:me@owner.co:t1@m1", quote: "q", at: AT }] })), /imessage:<rowid>/);
-  assert.ok(addCommitment(s, deck({ evidence: [{ source: "imessage", item: "imessage:4812", quote: "mando amanhã", at: AT }] })).created);
-  assert.ok(addCommitment(s, deck({ evidence: [{ source: "plow", item: "plow:cht_1:msg_2", quote: "anota", at: AT }] })).created);
+  assert.ok(addCommitment(s, deck({ what: "sign the contract", evidence: [{ source: "imessage", item: "imessage:4812", quote: "mando amanhã", at: AT }] })).created);
+  assert.ok(addCommitment(s, deck({ what: "intro to Sarah", objectKind: "intro", evidence: [{ source: "plow", item: "plow:cht_1:msg_2", quote: "anota", at: AT }] })).created);
 });
 
 test("a quote is cut to 280 characters", () => {
@@ -191,7 +191,7 @@ test("two processes writing at once lose no write", async () => {
       import { addCommitment } from ${JSON.stringify(join(SCRIPTS, "ledger.ts"))};
       for (let i = 0; i < 25; i++) withStore((s) => addCommitment(s, {
         direction: "i_owe", type: "promise", debtor: "owner", creditor: { name: "P", handles: ["p${tag}@x.com"] },
-        what: "thing ${tag} " + i, objectKind: "other", band: "open",
+        what: "task${tag}" + i, objectKind: "other", band: "open",
         evidence: [{ source: "imessage", item: "imessage:" + (${tag === "a" ? 1000 : 2000} + i), quote: "vou mandar", at: "${AT}" }],
       }));`;
     const proc = spawn(process.execPath, ["--input-type=module", "-e", code], { env: { ...process.env, LOOP_HOME: home }, stdio: ["ignore", "ignore", "pipe"] });
