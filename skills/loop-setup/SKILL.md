@@ -44,8 +44,30 @@ most, and two of them usually answer themselves.
 5. When the output has `next: null`, run `record-setup.ts --done`. It saves
    the settings and registers Loop's two jobs (the poll every 15 minutes and
    the daily digest). Then confirm in one or two lines that Loop is on: which
-   sources it reads and when the digest comes. If `--done` fails, show its
-   error line; running it again is safe.
+   sources it reads and when the digest comes, and ask: "Can I look at the
+   last two weeks now, to show you what is still open?" (in their language).
+   If `--done` fails, show its error line; running it again is safe.
+6. On yes, follow **Look back** below, in this turn.
+
+## Look back
+
+The owner is here, so Latch can ask them for these one-off reads now.
+
+1. Run `backfill.ts run`. If `degraded` has entries, say in one line which
+   source could not be read and pass on any `ownerAction` word for word.
+2. For each candidate, follow the **Extract** section of `loop-poll` and
+   record it with `detect.ts record --item <item> --json '<extraction>'`,
+   exactly as the poll does.
+3. Run `resolve.ts candidates`, and for each pair follow `loop-poll`'s
+   **Judge** and run `resolve.ts judge …`: what was already delivered in
+   these two weeks is closed now, not reported as open.
+4. Run `backfill.ts summary` and send its `text` to the owner as printed:
+   how many promises and requests are open, which are past due (with the
+   quote), and the ones Loop is unsure about, numbered for "4 sim" / "5 não".
+5. Run `backfill.ts done`.
+
+On no, say Loop starts from now and will send the first digest when
+something needs them.
 
 Never skip a question, invent an answer or fill one in from a guess.
 

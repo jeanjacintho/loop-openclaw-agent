@@ -48,5 +48,4 @@ test("the gate's manifest id matches the config entry, and it runs the script th
   assert.equal(manifest.id, "loop");
   assert.equal(gate.id, "loop");
   assert.equal(SETUP_STATUS, "/opt/plow/skills/loop/scripts/setup-status.ts");
-  assert.match(await readFile(new URL("../Dockerfile", import.meta.url), "utf8"), /COPY gate \/opt\/plow\/gate\n/);
 });

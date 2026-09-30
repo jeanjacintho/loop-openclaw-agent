@@ -16,7 +16,7 @@
 // Silence never closes anything.
 import { parseArgs } from "node:util";
 import { isMain, run } from "./cli.ts";
-import { readPending, type SourceName } from "./cursor.ts";
+import { readPending, type PendingName } from "./cursor.ts";
 import { withStore, type Store } from "./db.ts";
 import { sameHandle } from "./handles.ts";
 import {
@@ -39,7 +39,7 @@ export type Verdict = "fulfilled" | "partial" | "unrelated" | "cancelled";
 export const VERDICTS: readonly Verdict[] = ["fulfilled", "partial", "unrelated", "cancelled"];
 
 export function pendingEvidence(): EvidenceMessage[] {
-  return (["mail", "imessage"] as SourceName[]).flatMap((s) => (readPending<unknown, unknown>(s)?.evidence ?? []) as EvidenceMessage[]);
+  return (["mail", "imessage", "backfill"] as PendingName[]).flatMap((s) => (readPending<unknown, unknown>(s)?.evidence ?? []) as EvidenceMessage[]);
 }
 
 // Which side of the commitment wrote the message: the debtor, the creditor, or neither.

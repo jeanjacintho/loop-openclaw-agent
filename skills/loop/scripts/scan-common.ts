@@ -16,6 +16,7 @@ export type Candidate = {
   signals: Signal[];
   attachments: number;
   links: number;
+  backfill?: true; // from the look-back at setup, not the live poll
 };
 
 // A message to or from someone with a live commitment: possible evidence

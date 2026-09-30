@@ -58,6 +58,7 @@ export type NewCommitment = {
   deadline?: Partial<Deadline>;
   features?: Features;
   evidence: EvidenceInput[];
+  backfill?: boolean; // found by the two-week look-back at setup: no real-time alert
 };
 
 export type PersonView = { id: number; name: string | null; role: Role; isOwner: boolean; handles: string[] };
@@ -481,7 +482,7 @@ export function addCommitment(store: Store, raw: NewCommitment, actor = "loop", 
       .run(c.direction, c.type, debtorId, creditorId, c.what, normalizeWhat(c.what), c.objectKind,
         c.features ? JSON.stringify(c.features) : null, key, c.band, status, at, at).lastInsertRowid);
     for (const e of c.evidence) insertEvidence(store, id, e, at);
-    const detected: EventRow = { kind: "detected", payload: { status, band: c.band, deadline: c.deadline }, actor, at };
+    const detected: EventRow = { kind: "detected", payload: { status, band: c.band, deadline: c.deadline, ...(raw.backfill ? { backfill: true } : {}) }, actor, at };
     insertEvent(store, id, detected);
     writeDerived(store, id, applyEvent(null, detected), at);
     return { commitment: getCommitment(store, id), created: true };
