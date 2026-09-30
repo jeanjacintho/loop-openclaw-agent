@@ -3,7 +3,8 @@
 // One fixed argv (SEARCH_ARGV: the newest 200 messages), so Latch can remember
 // the owner's approval for the scheduled poll; what is new is cut locally by
 // rowid against the cursor (D8). Only the owner's own messages in direct
-// chats are candidates; group chats wait for a later version.
+// chats are candidates; group chats wait for a later version. Messages with
+// someone who has a live commitment, either way, are handed over as evidence.
 //
 //   scan-imessage.ts scan     → {candidates, dropped, degraded, …} and a pending file
 //   scan-imessage.ts commit   → moves the cursor past what scan handed over
@@ -14,7 +15,9 @@ import { commit, fail, ok, readCursor, savePending } from "./cursor.ts";
 import { isEmail, isPhone, normalizeHandle } from "./handles.ts";
 import { callMac, type BridgeOptions, type MacCommand } from "./mac.ts";
 import { nowMs } from "./paths.ts";
-import { countLinks, rowsOf, TEXT_MAX, toIso, walk, type Candidate } from "./scan-common.ts";
+import { withStore } from "./db.ts";
+import { liveCounterparties } from "./ledger.ts";
+import { countLinks, involves, rowsOf, TEXT_MAX, toIso, walk, type Candidate, type EvidenceMessage } from "./scan-common.ts";
 
 export const SEARCH_ARGV = ["plow-messages", "search", "--limit", "200", "--order", "desc"];
 export const SEARCH_LIMIT = 200;
@@ -67,6 +70,7 @@ export type ScanResult = {
   source: "imessage";
   disabled?: true;
   candidates: Candidate[];
+  evidence: EvidenceMessage[];
   dropped: Record<string, number>;
   degraded: { reason: string; detail?: string; ownerAction?: string }[];
   initialized?: true;
@@ -75,7 +79,7 @@ export type ScanResult = {
 
 export async function scanIMessage(opts: BridgeOptions = {}, now = nowMs()): Promise<ScanResult> {
   const config = loadConfig();
-  const result: ScanResult = { source: "imessage", candidates: [], dropped: {}, degraded: [] };
+  const result: ScanResult = { source: "imessage", candidates: [], evidence: [], dropped: {}, degraded: [] };
   if (!config.sources.imessage) return { ...result, disabled: true };
   const res = await callMac(searchCommand, opts);
   let parsed: ReturnType<typeof parseMessageRows> | undefined;
@@ -117,7 +121,15 @@ export async function scanIMessage(opts: BridgeOptions = {}, now = nowMs()): Pro
   const { received: _r, ...dropped } = walked.dropped;
   result.dropped = { ...result.dropped, ...(dropped as Record<string, number>) };
   const next = walked.last ? walked.last.rowid : pos;
-  savePending("imessage", { scannedAt: new Date(now).toISOString(), next: Math.max(next, pos), candidates: result.candidates });
+  // Messages with people who have a live commitment, sent or received, up to
+  // where the cursor will stop: possible evidence it was delivered or called off.
+  const known = withStore((s) => liveCounterparties(s)).flatMap((c) => c.handles);
+  result.evidence = known.length ? fresh.filter((r) => r.rowid <= next && !r.group && r.handle && involves([r.handle], known)).map((r) => ({
+    source: "imessage" as const, item: `imessage:${r.rowid}`, thread: r.handle!, direction: r.fromMe ? "sent" as const : "received" as const,
+    from: r.fromMe ? "owner" : r.handle!, to: r.fromMe ? [r.handle!] : ["owner"], sentAt: r.at ?? new Date(now).toISOString(),
+    text: r.text.trim().slice(0, TEXT_MAX), attachments: r.attachments, links: countLinks(r.text),
+  })) : [];
+  savePending("imessage", { scannedAt: new Date(now).toISOString(), next: Math.max(next, pos), candidates: result.candidates, evidence: result.evidence });
   return result;
 }
 

@@ -22,7 +22,7 @@ export type Cursor<P> = {
   failingSince?: string;
   warnedAt?: string;
 };
-export type Pending<P, C> = { scannedAt: string; next: P; candidates: C[] };
+export type Pending<P, C> = { scannedAt: string; next: P; candidates: C[]; evidence?: unknown[] };
 
 export const WARN_AFTER_MS = 30 * 60_000;
 

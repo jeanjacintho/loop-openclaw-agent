@@ -20,6 +20,7 @@ goes through these scripts.
 | `scan-imessage.ts` | `scan` \| `commit` \| `probe` | same shapes, for the owner's sent iMessages |
 | `detect.ts` | `record --item I --json '<extraction>'` | `{recorded:"commitment", created, band, commitment, ambiguous?}`, `{recorded:"update", change, commitment}`, `{recorded:"dropped"}` or `{recorded:"not_commitment"}` |
 | `people.ts` | `contacts-refresh` \| `role --person <handle\|id> --role R` \| `questions` \| `answer --a A --b B --same\|--different` \| `show --person P` | `{refreshed, contacts}`; `{person}`; `{questions:[{a, b}]}` (same name, no shared handle); `{kept, answer}`; `{people}` |
+| `resolve.ts` | `candidates` \| `judge --commitment C --item I --verdict fulfilled\|partial\|unrelated\|cancelled [--quote Q]` | `{pairs:[{commitment, message, role, sameThread, sameObject, hasFile}]}`; `{action:"resolved"\|"looks_done"\|"dropped"\|"evidence"\|"none", commitment}` |
 | `deadline.ts` | `--text T --sent-at ISO [--tz Z] [--locale L] [--type promise\|request…]` | `{kind:"date", at, text, certainty}`, `{kind:"event", event, text, certainty}` or `{kind:"none", text}` (+ `inferred` with `--type`) |
 | `cursor.ts` | `health` \| `get --source mail\|imessage` | `health` → per source `{lastOkAt, failingSince}` |
 | `mac-timezone.ts` | | `{timezone}` from the Mac, or `null` |
@@ -65,7 +66,9 @@ them in a pending file; `commit` moves the cursor past them once they are in
 the ledger. A crash in between re-reads the same messages, and the ledger
 ignores an item it already has. Each candidate:
 `{source, item, thread, to, cc, toNames, sentAt, subject?, text, signals, attachments, links}`.
-`text` is only the owner's own words (quoted history removed). `degraded`
+`text` is only the owner's own words (quoted history removed). Scans also hand over `evidence`: new messages to or from someone with a
+live commitment (for mail, the inbox is read only while a commitment is
+live, and only those people's messages are kept), for `resolve.ts`. `degraded`
 lists what could not be read and why (`blocked` with Latch's `ownerAction`,
 `unreachable`, `mail-no-body`, `imessage-gap`); `failing.warn` is true once,
 30 minutes into a run of failures.
