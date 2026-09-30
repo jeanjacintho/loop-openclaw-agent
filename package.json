@@ -2,6 +2,10 @@
   "name": "@plow/openclaw-agent-checks",
   "private": true,
   "type": "module",
+  "scripts": {
+    "test": "node --test --test-reporter=tap \"tests/*.test.ts\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
   "devDependencies": {
     "@types/node": "26.6.2",
     "@types/ws": "8.18.1",
