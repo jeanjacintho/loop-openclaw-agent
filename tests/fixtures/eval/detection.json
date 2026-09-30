@@ -1,0 +1,961 @@
+{
+ "about": "Synthetic, hand-labelled messages for Loop's detection eval. Written for this repo, not taken from anyone's mail. The plan's gate asks for >= 80 real, anonymized messages from the owner; replace or extend this set with those before trusting the numbers.",
+ "features_order": [
+  "first_person",
+  "delivery_verb",
+  "concrete_object",
+  "clear_counterparty",
+  "explicit_deadline",
+  "conditional",
+  "social_pleasantry"
+ ],
+ "examples": [
+  {
+   "id": "promise-01",
+   "lang": "en",
+   "category": "promise",
+   "text": "I'll send you the updated deck tomorrow.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-02",
+   "lang": "en",
+   "category": "promise",
+   "text": "I will get you the signed NDA by Friday.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-03",
+   "lang": "en",
+   "category": "promise",
+   "text": "Let me intro you to Sarah from Acme this week.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-04",
+   "lang": "en",
+   "category": "promise",
+   "text": "I'll review the term sheet and get back to you by Monday.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-05",
+   "lang": "en",
+   "category": "promise",
+   "text": "I'll share the Q3 numbers after the board meeting.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-06",
+   "lang": "en",
+   "category": "promise",
+   "text": "Will send the invoice today.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-07",
+   "lang": "en",
+   "category": "promise",
+   "text": "I'm going to prepare the pricing proposal for you.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-08",
+   "lang": "en",
+   "category": "promise",
+   "text": "I'll send over the data room link.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-09",
+   "lang": "en",
+   "category": "promise",
+   "text": "I'll pay the contractor invoice by the 10th.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-10",
+   "lang": "en",
+   "category": "promise",
+   "text": "We'll send the revised contract by EOD.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-11",
+   "lang": "en",
+   "category": "promise",
+   "text": "I'll get back to you on the partnership terms next week.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-12",
+   "lang": "en",
+   "category": "promise",
+   "text": "Let me find the right person on our team and connect you two tomorrow.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-13",
+   "lang": "pt",
+   "category": "promise",
+   "text": "Amanhã te mando o deck atualizado.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-14",
+   "lang": "pt",
+   "category": "promise",
+   "text": "Vou revisar o contrato e te devolvo até sexta.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-15",
+   "lang": "pt",
+   "category": "promise",
+   "text": "Te passo os números do trimestre depois do board.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-16",
+   "lang": "pt",
+   "category": "promise",
+   "text": "Te apresento pro Pedro da Kaszek essa semana.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-17",
+   "lang": "pt",
+   "category": "promise",
+   "text": "Mando a proposta comercial hoje ainda.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-18",
+   "lang": "pt",
+   "category": "promise",
+   "text": "Vou preparar o relatório de métricas pra vocês.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-19",
+   "lang": "pt",
+   "category": "promise",
+   "text": "Te envio o link do data room.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-20",
+   "lang": "pt",
+   "category": "promise",
+   "text": "Pago a nota fiscal até dia 10.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-21",
+   "lang": "pt",
+   "category": "promise",
+   "text": "A gente manda o contrato revisado até o fim do dia.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-22",
+   "lang": "pt",
+   "category": "promise",
+   "text": "Te retorno sobre a parceria semana que vem.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-23",
+   "lang": "pt",
+   "category": "promise",
+   "text": "Fechado, te mando o cap table na segunda.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "promise-24",
+   "lang": "pt",
+   "category": "promise",
+   "text": "Vou falar com o time e te dou uma resposta até quinta.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "i_owe",
+    "type": "promise"
+   }
+  },
+  {
+   "id": "request-01",
+   "lang": "en",
+   "category": "request",
+   "text": "Can you send me the metrics by Friday?",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-02",
+   "lang": "en",
+   "category": "request",
+   "text": "Could you review the draft before Thursday's call?",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-03",
+   "lang": "en",
+   "category": "request",
+   "text": "Please send the signed SOW when you can.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-04",
+   "lang": "en",
+   "category": "request",
+   "text": "Can you intro me to the head of procurement at Globex?",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-05",
+   "lang": "en",
+   "category": "request",
+   "text": "Would you share the reference list by tomorrow?",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-06",
+   "lang": "en",
+   "category": "request",
+   "text": "Could you get me the updated quote this week?",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-07",
+   "lang": "en",
+   "category": "request",
+   "text": "Can you confirm the wire went out today?",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-08",
+   "lang": "en",
+   "category": "request",
+   "text": "Please send over your feedback on the proposal by Monday.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-09",
+   "lang": "pt",
+   "category": "request",
+   "text": "Consegue me mandar as métricas até sexta?",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-10",
+   "lang": "pt",
+   "category": "request",
+   "text": "Pode revisar o contrato antes da call de quinta?",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-11",
+   "lang": "pt",
+   "category": "request",
+   "text": "Me manda o comprovante da transferência hoje?",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-12",
+   "lang": "pt",
+   "category": "request",
+   "text": "Poderia me apresentar pro time de compras da Ambev?",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-13",
+   "lang": "pt",
+   "category": "request",
+   "text": "Me passa o orçamento atualizado essa semana, por favor.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-14",
+   "lang": "pt",
+   "category": "request",
+   "text": "Consegue me enviar a lista de referências amanhã?",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-15",
+   "lang": "pt",
+   "category": "request",
+   "text": "Preciso que você me mande o NDA assinado até segunda.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "request-16",
+   "lang": "pt",
+   "category": "request",
+   "text": "Me envia seu feedback sobre a proposta quando puder?",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "request"
+   }
+  },
+  {
+   "id": "delegation-01",
+   "lang": "en",
+   "category": "delegation",
+   "text": "Lucas, please finish the investor update draft by Wednesday.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "delegation"
+   }
+  },
+  {
+   "id": "delegation-02",
+   "lang": "en",
+   "category": "delegation",
+   "text": "Maria, prepare the onboarding deck for Acme before Monday.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "delegation"
+   }
+  },
+  {
+   "id": "delegation-03",
+   "lang": "en",
+   "category": "delegation",
+   "text": "Tom — update the pricing page by EOD.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "delegation"
+   }
+  },
+  {
+   "id": "delegation-04",
+   "lang": "pt",
+   "category": "delegation",
+   "text": "Lucas, prepara o relatório de churn até quinta.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "delegation"
+   }
+  },
+  {
+   "id": "delegation-05",
+   "lang": "pt",
+   "category": "delegation",
+   "text": "Ana, atualiza o pitch com os números novos até amanhã.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "delegation"
+   }
+  },
+  {
+   "id": "delegation-06",
+   "lang": "pt",
+   "category": "delegation",
+   "text": "Rafa, agenda a reunião com o cliente pra semana que vem.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "direction": "they_owe",
+    "type": "delegation"
+   }
+  },
+  {
+   "id": "pleasantry-01",
+   "lang": "en",
+   "category": "pleasantry",
+   "text": "Let's grab coffee sometime!",
+   "features": "1001001",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "pleasantry-02",
+   "lang": "en",
+   "category": "pleasantry",
+   "text": "We should catch up soon, it's been too long.",
+   "features": "1001001",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "pleasantry-03",
+   "lang": "en",
+   "category": "pleasantry",
+   "text": "Would love to have you over for dinner one of these days.",
+   "features": "1001001",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "pleasantry-04",
+   "lang": "en",
+   "category": "pleasantry",
+   "text": "Let's definitely keep in touch.",
+   "features": "1001001",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "pleasantry-05",
+   "lang": "pt",
+   "category": "pleasantry",
+   "text": "Vamos marcar um café qualquer dia desses!",
+   "features": "1001001",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "pleasantry-06",
+   "lang": "pt",
+   "category": "pleasantry",
+   "text": "Precisamos nos ver mais, bora combinar algo.",
+   "features": "1001001",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "pleasantry-07",
+   "lang": "pt",
+   "category": "pleasantry",
+   "text": "Qualquer hora a gente marca um almoço.",
+   "features": "1001001",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "pleasantry-08",
+   "lang": "pt",
+   "category": "pleasantry",
+   "text": "Vamos nos falando!",
+   "features": "1001001",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "hypothetical-01",
+   "lang": "en",
+   "category": "hypothetical",
+   "text": "If I have time I'll review it this week.",
+   "features": "1111110",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "hypothetical-02",
+   "lang": "en",
+   "category": "hypothetical",
+   "text": "Maybe I can send you something next week.",
+   "features": "1101110",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "hypothetical-03",
+   "lang": "en",
+   "category": "hypothetical",
+   "text": "If the board approves, I'll send the offer letter Friday.",
+   "features": "1111110",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "hypothetical-04",
+   "lang": "pt",
+   "category": "hypothetical",
+   "text": "Se der, te mando o deck amanhã.",
+   "features": "1111110",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "hypothetical-05",
+   "lang": "pt",
+   "category": "hypothetical",
+   "text": "Talvez eu consiga revisar isso semana que vem.",
+   "features": "1111110",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "hypothetical-06",
+   "lang": "pt",
+   "category": "hypothetical",
+   "text": "Se o jurídico liberar, mando o contrato na sexta.",
+   "features": "1111110",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "past-01",
+   "lang": "en",
+   "category": "past",
+   "text": "I sent you the deck yesterday, let me know if you got it.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": false
+   },
+   "note": "done already; may resolve an open commitment"
+  },
+  {
+   "id": "past-02",
+   "lang": "en",
+   "category": "past",
+   "text": "Attached is the signed NDA.",
+   "features": "0011000",
+   "gold": {
+    "is_commitment": false
+   },
+   "note": "done already; may resolve an open commitment"
+  },
+  {
+   "id": "past-03",
+   "lang": "en",
+   "category": "past",
+   "text": "Just paid the invoice, thanks for the patience.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": false
+   },
+   "note": "done already; may resolve an open commitment"
+  },
+  {
+   "id": "past-04",
+   "lang": "pt",
+   "category": "past",
+   "text": "Mandei o contrato ontem, dá uma olhada.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": false
+   },
+   "note": "done already; may resolve an open commitment"
+  },
+  {
+   "id": "past-05",
+   "lang": "pt",
+   "category": "past",
+   "text": "Segue em anexo a proposta.",
+   "features": "0011000",
+   "gold": {
+    "is_commitment": false
+   },
+   "note": "done already; may resolve an open commitment"
+  },
+  {
+   "id": "past-06",
+   "lang": "pt",
+   "category": "past",
+   "text": "Já fiz a transferência, confere aí.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": false
+   },
+   "note": "done already; may resolve an open commitment"
+  },
+  {
+   "id": "other-01",
+   "lang": "en",
+   "category": "other",
+   "text": "Thanks so much for the intro, really appreciate it!",
+   "features": "0001000",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "other-02",
+   "lang": "en",
+   "category": "other",
+   "text": "Great meeting today, the team loved the demo.",
+   "features": "0001000",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "other-03",
+   "lang": "en",
+   "category": "other",
+   "text": "What time works for you?",
+   "features": "1001000",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "other-04",
+   "lang": "en",
+   "category": "other",
+   "text": "I'll think about it.",
+   "features": "1001000",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "other-05",
+   "lang": "en",
+   "category": "other",
+   "text": "Let me know if you need anything else.",
+   "features": "1001000",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "other-06",
+   "lang": "pt",
+   "category": "other",
+   "text": "Obrigado pela conversa hoje, foi ótimo.",
+   "features": "0001000",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "other-07",
+   "lang": "pt",
+   "category": "other",
+   "text": "Que horas fica bom pra você?",
+   "features": "1001000",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "other-08",
+   "lang": "pt",
+   "category": "other",
+   "text": "Vou pensar e te falo.",
+   "features": "1101000",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "other-09",
+   "lang": "pt",
+   "category": "other",
+   "text": "Qualquer coisa me avisa.",
+   "features": "1001000",
+   "gold": {
+    "is_commitment": false
+   }
+  },
+  {
+   "id": "renegotiation-01",
+   "lang": "en",
+   "category": "renegotiation",
+   "text": "Actually I'll send the deck Monday instead, sorry for the delay.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "updates": "deadline"
+   }
+  },
+  {
+   "id": "renegotiation-02",
+   "lang": "en",
+   "category": "renegotiation",
+   "text": "Can we push the contract review to next week?",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "updates": "deadline"
+   }
+  },
+  {
+   "id": "renegotiation-03",
+   "lang": "pt",
+   "category": "renegotiation",
+   "text": "Na verdade te mando o deck só segunda, foi mal.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "updates": "deadline"
+   }
+  },
+  {
+   "id": "renegotiation-04",
+   "lang": "pt",
+   "category": "renegotiation",
+   "text": "Consigo te passar os números só semana que vem.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "updates": "deadline"
+   }
+  },
+  {
+   "id": "renegotiation-05",
+   "lang": "pt",
+   "category": "renegotiation",
+   "text": "Pode me mandar as métricas na terça então, sem pressa.",
+   "features": "1111100",
+   "gold": {
+    "is_commitment": true,
+    "updates": "deadline"
+   }
+  },
+  {
+   "id": "cancel-01",
+   "lang": "en",
+   "category": "cancellation",
+   "text": "No need to send the metrics anymore, we got them elsewhere.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "updates": "cancel"
+   }
+  },
+  {
+   "id": "cancel-02",
+   "lang": "en",
+   "category": "cancellation",
+   "text": "Forget the deck, the meeting was cancelled.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "updates": "cancel"
+   }
+  },
+  {
+   "id": "cancel-03",
+   "lang": "pt",
+   "category": "cancellation",
+   "text": "Esquece o deck, não precisa mais.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "updates": "cancel"
+   }
+  },
+  {
+   "id": "cancel-04",
+   "lang": "pt",
+   "category": "cancellation",
+   "text": "Não vou conseguir mandar a proposta, desculpa.",
+   "features": "1111000",
+   "gold": {
+    "is_commitment": true,
+    "updates": "cancel"
+   }
+  }
+ ]
+}
