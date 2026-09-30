@@ -3,11 +3,20 @@ import { test } from "node:test";
 import { parseField, parseSources, parseTime } from "../skills/loop/scripts/config.ts";
 import { statusFilling } from "../skills/loop/scripts/setup-status.ts";
 import { cli, tmpHome } from "./helpers.ts";
+import { join } from "node:path";
+import { readFileSync } from "node:fs";
+
+const FAKE_CLI = join(import.meta.dirname, "fixtures", "fake-openclaw.mjs");
+function loopEnv(): Record<string, string> {
+  const home = tmpHome();
+  return { LOOP_HOME: home, LOOP_NOW: NOW, LOOP_OPENCLAW_CLI: FAKE_CLI, FAKE_CRON_FILE: join(home, "jobs.json") };
+}
+const jobs = (env: Record<string, string>) => JSON.parse(readFileSync(env.FAKE_CRON_FILE!, "utf8"));
 
 const NOW = "2026-09-30T11:00:00Z"; // Wednesday, 08:00 in São Paulo
 
 test("setup asks name, time zone, digest time and sources, in that order, then finishes", () => {
-  const env = { LOOP_HOME: tmpHome(), LOOP_NOW: NOW };
+  const env = loopEnv();
   const record = (field: string, value: string) => cli("record-setup.ts", ["--field", field, "--value", value], env);
   assert.equal(record("ownerName", "Ana Lima").json.next, "timezone");
   assert.equal(record("timezone", "America/Sao_Paulo").json.next, "digestTime");
@@ -21,21 +30,31 @@ test("setup asks name, time zone, digest time and sources, in that order, then f
   assert.deepEqual(done.json.config.sources, { mail: { accounts: ["ana@startup.com"] }, imessage: true });
   assert.equal(done.json.config.digestTime, "08:30");
   assert.equal(done.json.config.language, "pt-BR");
+  assert.deepEqual(done.json.crons.actions.map((a: { op: string; name: string }) => `${a.op} ${a.name}`), ["create loop-poll", "create loop-digest"]);
+  assert.deepEqual(jobs(env).find((j: { name: string }) => j.name === "loop-digest").schedule, { kind: "cron", expr: "30 8 * * *", tz: "America/Sao_Paulo" });
   const status = cli("setup-status.ts", [], { ...env, PLOW_API_BASE: "", PLOW_MCP_BRIDGE_TOKEN: "" }).json;
   assert.equal(status.status, "READY");
   assert.equal(status.now, "2026-09-30T08:00:00-03:00");
   assert.equal(status.weekday, "wed");
 });
 
-test("after setup, a change in plain words updates the config, and pause/resume flip it", () => {
-  const env = { LOOP_HOME: tmpHome(), LOOP_NOW: NOW };
+test("after setup, a change in plain words updates the config and the digest job, and pause/resume flip both jobs", () => {
+  const env = loopEnv();
   for (const [f, v] of [["ownerName", "Ana"], ["timezone", "UTC"], ["digestTime", "8h30"], ["sources", '{"mail":null,"imessage":true}']]) {
     cli("record-setup.ts", ["--field", f!, "--value", v!], env);
   }
   cli("record-setup.ts", ["--done"], env);
-  assert.equal(cli("record-setup.ts", ["--field", "digestTime", "--value", "7"], env).json.config.digestTime, "07:00");
+  const seven = cli("record-setup.ts", ["--field", "digestTime", "--value", "7"], env).json;
+  assert.equal(seven.config.digestTime, "07:00");
+  assert.deepEqual(seven.crons.actions.map((a: { op: string; name: string }) => `${a.op} ${a.name}`), ["edit loop-digest"]);
+  assert.equal(jobs(env).find((j: { name: string }) => j.name === "loop-digest").schedule.expr, "0 7 * * *");
+  assert.equal(jobs(env).length, 2, "edited in place, never removed and re-created");
   assert.equal(cli("record-setup.ts", ["--pause"], env).json.config.paused, true);
+  assert.deepEqual(jobs(env).map((j: { enabled: boolean }) => j.enabled), [false, false]);
   assert.equal(cli("record-setup.ts", ["--resume"], env).json.config.paused, false);
+  assert.deepEqual(jobs(env).map((j: { enabled: boolean }) => j.enabled), [true, true]);
+  // A setting the jobs do not depend on does not touch the scheduler.
+  assert.equal(cli("record-setup.ts", ["--field", "language", "--value", "en"], env).json.crons, undefined);
   const bad = cli("record-setup.ts", ["--field", "sources", "--value", '{"mail":null,"imessage":false}'], env);
   assert.notEqual(bad.status, 0);
   assert.match(bad.stderr, /at least one source/);

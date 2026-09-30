@@ -1,29 +1,34 @@
 // Saves one setup answer (to the draft, or to config.json once set up),
-// finishes setup with --done, or pauses and resumes Loop.
+// finishes setup with --done, or pauses and resumes Loop. Finishing, pausing,
+// resuming and a new digest time or time zone re-register the cron jobs.
 import { parseArgs } from "node:util";
 import { isMain, run } from "./cli.ts";
 import { isSettable, nextField, parseField, QUESTIONS, validateConfig, type Config, type Field } from "./config.ts";
 import { file, nowMs } from "./paths.ts";
+import { registerFromConfig } from "./register-crons.ts";
 import { readJson, removeFile, updateJson, withLock, writeJson } from "./store.ts";
 
 export type Recorded =
-  | { saved: string; config: Config }
+  | { saved: string; config: Config; crons?: unknown }
   | { saved: string; next: Field | null; question: string | null };
 
-export function record(field: string, value: string): Recorded {
+// The settings the cron jobs are built from.
+const SCHEDULED = ["digestTime", "timezone"];
+
+export function record(field: string, value: string, register: () => unknown = () => registerFromConfig()): Recorded {
   if (!isSettable(field)) throw new Error(`unknown setting: ${field}`);
   const patch = parseField(field, value);
   const configPath = file("config.json");
   if (readJson<Config | null>(configPath, null)?.setupDoneAt) {
     const config = updateJson<Config | null>(configPath, null, (c) => validateConfig({ ...c!, ...patch }));
-    return { saved: field, config: config! };
+    return SCHEDULED.includes(field) ? { saved: field, config: config!, crons: register() } : { saved: field, config: config! };
   }
   const draft = updateJson<Partial<Config>>(file("config.draft.json"), {}, (d) => ({ ...d, ...patch }));
   const next = nextField(draft) ?? null;
   return { saved: field, next, question: next ? QUESTIONS[next] : null };
 }
 
-export function finish(now: number = nowMs()): { done: true; config: Config } {
+export function finish(register: () => unknown = () => registerFromConfig(), now: number = nowMs()): { done: true; config: Config; crons: unknown } {
   const configPath = file("config.json");
   const draftPath = file("config.draft.json");
   const config = withLock(configPath, () => {
@@ -38,14 +43,15 @@ export function finish(now: number = nowMs()): { done: true; config: Config } {
     removeFile(draftPath);
     return done;
   });
-  return { done: true, config };
+  // config.json stays written if registration fails; --done can be re-run.
+  return { done: true, config, crons: register() };
 }
 
-export function setPaused(paused: boolean): { paused: boolean; config: Config } {
+export function setPaused(paused: boolean, register: () => unknown = () => registerFromConfig()): { paused: boolean; config: Config; crons: unknown } {
   const path = file("config.json");
   if (!readJson<Config | null>(path, null)?.setupDoneAt) throw new Error("setup is not finished; run the setup first");
   const config = updateJson<Config | null>(path, null, (c) => ({ ...c!, paused }))!;
-  return { paused, config };
+  return { paused, config, crons: register() };
 }
 
 if (isMain(import.meta.url)) {

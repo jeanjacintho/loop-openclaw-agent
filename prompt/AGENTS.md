@@ -116,3 +116,7 @@ changes only through `ledger.ts`; never write Loop's state files yourself.
   `SETUP_NEEDED` → load `loop-setup` and follow it. Otherwise, the owner
   changes a setting, pauses, resumes or asks for status → `loop-setup`,
   "After setup".
+- **Scheduled turns:** a turn whose message starts with `Loop poll.` →
+  `loop-poll`; one that starts with `Loop digest.` → `loop-digest`. They have
+  no inbound message: send only what the skill says, and end silently when it
+  says so. Silence is the normal outcome.

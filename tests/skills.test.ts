@@ -29,3 +29,15 @@ test("every script the prompt or a Loop skill names exists", () => {
   assert.ok(named.has("ledger"));
   for (const name of named) assert.ok(existsSync(join(SCRIPTS, `${name}.ts`)), `missing script ${name}.ts`);
 });
+
+test("the scheduled messages are what the prompt keys on, and each has its skill", async () => {
+  const { POLL_MESSAGE, DIGEST_MESSAGE } = await import("../skills/loop/scripts/register-crons.ts");
+  assert.ok(prompt.replace(/\s+/g, " ").includes("`Loop poll.` → `loop-poll`"));
+  assert.ok(prompt.replace(/\s+/g, " ").includes("`Loop digest.` → `loop-digest`"));
+  assert.ok(POLL_MESSAGE.startsWith("Loop poll.") && POLL_MESSAGE.includes("loop-poll skill"));
+  assert.ok(DIGEST_MESSAGE.startsWith("Loop digest.") && DIGEST_MESSAGE.includes("loop-digest skill"));
+  for (const dir of ["loop-poll", "loop-digest"]) assert.ok(existsSync(join(SKILLS, dir, "SKILL.md")), dir);
+  for (const dir of ["loop-poll", "loop-digest"]) {
+    assert.match(readFileSync(join(SKILLS, dir, "SKILL.md"), "utf8"), /If it is not `READY`, or `config.paused` is true,\s+end silently/);
+  }
+});

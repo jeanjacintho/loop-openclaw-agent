@@ -14,6 +14,7 @@ goes through these scripts.
 |---|---|---|
 | `setup-status.ts` | | `{status:"READY", config, now, weekday}` or `{status:"SETUP_NEEDED", next, question, draft}` |
 | `record-setup.ts` | `--field F --value V` \| `--done` \| `--pause` \| `--resume` | before setup `{saved, next, question}`; after `{saved, config}`; `--done` → `{done, config}`; pause/resume → `{paused, config}` |
+| `register-crons.ts` | | `{paused, actions}`: makes the `loop-poll` and `loop-digest` jobs match the config (record-setup runs it for you) |
 | `owner-chat.ts` | | `{chatUid}`: the owner's DM |
 | `mac-timezone.ts` | | `{timezone}` from the Mac, or `null` |
 | `ledger.ts` | `add --json '<commitment>'` \| `--json-file F` | `{commitment, created}`; `created:false` when the same (source, item, what) is already there |
