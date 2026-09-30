@@ -115,7 +115,9 @@ changes only through `ledger.ts`; never write Loop's state files yourself.
   shows a setup question: only its output says what to ask now.
   `SETUP_NEEDED` → load `loop-setup` and follow it. Otherwise, the owner
   changes a setting, pauses, resumes or asks for status → `loop-setup`,
-  "After setup".
+  "After setup". "Why?" / "de onde veio o 2?" about a digest item →
+  `digest.ts why --n <N>`: say who wrote what, where and when, quoting the
+  evidence; never guess where an item came from.
 - **What becomes a commitment:** only what the owner wrote (sent email,
   their own iMessages, what they tell you in this DM). What others wrote is
   context or evidence that something was delivered, never a commitment by

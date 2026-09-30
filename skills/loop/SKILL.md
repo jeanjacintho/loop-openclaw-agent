@@ -21,6 +21,7 @@ goes through these scripts.
 | `detect.ts` | `record --item I --json '<extraction>'` | `{recorded:"commitment", created, band, commitment, ambiguous?}`, `{recorded:"update", change, commitment}`, `{recorded:"dropped"}` or `{recorded:"not_commitment"}` |
 | `people.ts` | `contacts-refresh` \| `role --person <handle\|id> --role R` \| `questions` \| `answer --a A --b B --same\|--different` \| `show --person P` | `{refreshed, contacts}`; `{person}`; `{questions:[{a, b}]}` (same name, no shared handle); `{kept, answer}`; `{people}` |
 | `resolve.ts` | `candidates` \| `judge --commitment C --item I --verdict fulfilled\|partial\|unrelated\|cancelled [--quote Q]` | `{pairs:[{commitment, message, role, sameThread, sameObject, hasFile}]}`; `{action:"resolved"\|"looks_done"\|"dropped"\|"evidence"\|"none", commitment}` |
+| `digest.ts` | `pick` \| `sent` \| `alerts [--sent ID,…]` \| `item --n N` \| `why --n N\|--id X` (all take `[--now ISO]`) | `{send, text?, items, offline?}`; `{items}`; `{alerts:[{id, text}], quiet?}`; `{item}`; `{commitment, evidence}` |
 | `deadline.ts` | `--text T --sent-at ISO [--tz Z] [--locale L] [--type promise\|request…]` | `{kind:"date", at, text, certainty}`, `{kind:"event", event, text, certainty}` or `{kind:"none", text}` (+ `inferred` with `--type`) |
 | `cursor.ts` | `health` \| `get --source mail\|imessage` | `health` → per source `{lastOkAt, failingSince}` |
 | `mac-timezone.ts` | | `{timezone}` from the Mac, or `null` |
